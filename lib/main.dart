@@ -467,7 +467,7 @@ class RaceDetailsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "($sample) Benchmarks: $bmLT | $bmQ1 | $bmQ2 | $bmQ3 | $bmQ4",
+              "($sample) Benchmarks: $bmLT || $bmQ1 | $bmQ2 | $bmQ3 | $bmQ4",
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 8),
@@ -532,13 +532,29 @@ class RaceDetailsPage extends StatelessWidget {
                               child: buildSaddleCloth(horseNo),
                             ),
 
-                            // Barrier
+                            // Barrier (Now wrapped in GestureDetector)
                             SizedBox(
                               width: 40, // Adjust width if needed
-                              child: Center( // Center-align the barrier value
-                                child: Text(barrier, textAlign: TextAlign.center), // Ensure text is center-aligned
+                              child: GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => BarrierStatsPopup(runner: runner),  // Show BarrierStatsPopup
+                                  );
+                                },
+                                child: Center( // Center-align the barrier value
+                                  child: Text(
+                                    barrier,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      decoration: TextDecoration.underline,  // Make the barrier clickable like a link
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
+
 
 
                             // Lead, BL, and Death Dots - each in their own column
@@ -593,20 +609,46 @@ class RaceDetailsPage extends StatelessWidget {
                             // Trainer
                             SizedBox(
                               width: 150,
-                              child: Text(
-                                runner['Trainer'] ?? '',
-                                overflow: TextOverflow.ellipsis,
+                              child: GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => TrainerStatsPopup(runner: runner),
+                                  );
+                                },
+                                child: Text(
+                                  runner['Trainer'] ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue,
+                                  ),
+                                ),
                               ),
                             ),
 
-                            // Driver
+
+                            // Driver (tap to open DriverStatsPopup)
                             SizedBox(
                               width: 150,
-                              child: Text(
-                                runner['Driver'] ?? '',
-                                overflow: TextOverflow.ellipsis,
+                              child: GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => DriverStatsPopup(runner: runner),
+                                  );
+                                },
+                                child: Text(
+                                  runner['Driver'] ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue,
+                                  ),
+                                ),
                               ),
                             ),
+
                           ],
                         ),
                       );
@@ -627,3 +669,467 @@ class RaceDetailsPage extends StatelessWidget {
 
 
 
+// Helper to align the text in each data cell
+Widget right(String? text, {Color? color}) {
+  return Align(
+    alignment: Alignment.centerRight,
+    child: Text(
+      text ?? '',
+      style: TextStyle(fontSize: 12, color: color),
+    ),
+  );
+}
+
+
+class DriverStatsPopup extends StatefulWidget {
+  final Map<String, String> runner; // Pass the driver data here
+
+  const DriverStatsPopup({super.key, required this.runner});
+
+  @override
+  _DriverStatsPopupState createState() => _DriverStatsPopupState();
+}
+
+class _DriverStatsPopupState extends State<DriverStatsPopup> {
+  // State for the selected period (30, 90, 180, 365, All)
+  String selectedPeriod = '30';
+
+  // Helper method to determine the color of ROI
+  Color _getROIColor(String roi) {
+    final roiValue = double.tryParse(roi) ?? 0;
+    return roiValue > 0 ? Colors.green : Colors.red;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final driver = widget.runner;
+
+    // Prepare rows: label, races, wins, win SR, pla, pla SR, ROI
+    final rows = [
+      {
+        'label': '30d',
+        'Races': driver['Dr 30 Sts'] ?? '0',
+        'Wins': driver['Dr 30 Win'] ?? '0',
+        'Win %': driver['Dr 30 Win %'] ?? '0',
+        'Pla': driver['Dr 30 Pla'] ?? '0',
+        'Pla %': driver['Dr 30 Pla %'] ?? '0',
+        'ROI': driver['Dr 30 ROI %'] ?? '0',
+      },
+      {
+        'label': '90d',
+        'Races': driver['Dr 90 Sts'] ?? '0',
+        'Wins': driver['Dr 90 Win'] ?? '0',
+        'Win %': driver['Dr 90 Win %'] ?? '0',
+        'Pla': driver['Dr 90 Pla'] ?? '0',
+        'Pla %': driver['Dr 90 Pla %'] ?? '0',
+        'ROI': driver['Dr 90 ROI %'] ?? '0',
+      },
+      {
+        'label': '180d',
+        'Races': driver['Dr 180 Sts'] ?? '0',
+        'Wins': driver['Dr 180 Win'] ?? '0',
+        'Win %': driver['Dr 180 Win %'] ?? '0',
+        'Pla': driver['Dr 180 Pla'] ?? '0',
+        'Pla %': driver['Dr 180 Pla %'] ?? '0',
+        'ROI': driver['Dr 180 ROI %'] ?? '0',
+      },
+      {
+        'label': '365d',
+        'Races': driver['Dr 365 Sts'] ?? '0',
+        'Wins': driver['Dr 365 Win'] ?? '0',
+        'Win %': driver['Dr 365 Win %'] ?? '0',
+        'Pla': driver['Dr 365 Pla'] ?? '0',
+        'Pla %': driver['Dr 365 Pla %'] ?? '0',
+        'ROI': driver['Dr 365 ROI %'] ?? '0',
+      },
+      {
+        'label': 'All',
+        'Races': driver['Dr All Sts'] ?? '0',
+        'Wins': driver['Dr All Win'] ?? '0',
+        'Win %': driver['Dr All Win %'] ?? '0',
+        'Pla': driver['Dr All Pla'] ?? '0',
+        'Pla %': driver['Dr All Pla %'] ?? '0',
+        'ROI': driver['Dr All ROI %'] ?? '0',
+      },
+    ];
+
+    return AlertDialog(
+      title: Text('Driver Stats: ${driver['Driver'] ?? 'Unknown'}'),
+      content: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTableTheme(
+          data: DataTableThemeData(
+            headingRowHeight: 24,
+            dataRowMinHeight: 20,
+            dataRowMaxHeight: 24,
+          ),
+          child: DataTable(
+            headingRowColor: MaterialStateProperty.all(Colors.blue[50]),
+            columns: [
+              const DataColumn(
+                label: Text('', style: TextStyle(fontSize: 12)),
+              ),
+              const DataColumn(
+                label: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('Races', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+              const DataColumn(
+                label: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('Wins (SR)', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+              const DataColumn(
+                label: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('Pla (SR)', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+              const DataColumn(
+                label: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('ROI', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+            ],
+            rows: rows.map((row) {
+              final roiValue = double.tryParse(row['ROI'] ?? '') ?? 0;
+              final roiColor = roiValue >= 0 ? Colors.green : Colors.red;
+
+              // Formatting the numbers for better readability
+              String formatStat(String? raw, String? pct) {
+                final intVal = double.tryParse(raw ?? '')?.toInt() ?? 0;
+                final pctVal = double.tryParse(pct ?? '')?.toStringAsFixed(0) ?? '0';
+                return '$intVal ($pctVal%)';
+              }
+
+
+              return DataRow(cells: [
+                DataCell(Text(row['label'] ?? '', style: const TextStyle(fontSize: 12))),
+                DataCell(right((double.tryParse(row['Races'] ?? '')?.toInt().toString()))),
+                DataCell(right(formatStat(row['Wins'], row['Win %']))),
+                DataCell(right(formatStat(row['Pla'], row['Pla %']))),
+                DataCell(right('${roiValue.toStringAsFixed(1)}%', color: roiColor)),
+              ]);
+            }).toList(),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+  // Method to build period toggle buttons
+  Widget _buildPeriodButton(String period) {
+    return TextButton(
+      onPressed: () {
+        setState(() {
+          selectedPeriod = period;
+        });
+      },
+      child: Text(
+        period,
+        style: TextStyle(
+          color: selectedPeriod == period ? Colors.blue : Colors.black,
+          fontWeight: selectedPeriod == period ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+// 📊 TrainerStatsPopup
+class TrainerStatsPopup extends StatelessWidget {
+  final Map<String, String> runner;
+
+  const TrainerStatsPopup({super.key, required this.runner});
+
+  Color _getROIColor(String roi) {
+    final roiValue = double.tryParse(roi) ?? 0;
+    return roiValue > 0 ? Colors.green : Colors.red;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trainer = runner;
+
+    final rows = [
+      {
+        'label': '30d',
+        'Races': trainer['Tr 30 Sts'] ?? '0',
+        'Wins': trainer['Tr 30 Win'] ?? '0',
+        'Win %': trainer['Tr 30 Win %'] ?? '0',
+        'Pla': trainer['Tr 30 Pla'] ?? '0',
+        'Pla %': trainer['Tr 30 Pla %'] ?? '0',
+        'ROI': trainer['Tr 30 ROI %'] ?? '0',
+      },
+      {
+        'label': '90d',
+        'Races': trainer['Tr 90 Sts'] ?? '0',
+        'Wins': trainer['Tr 90 Win'] ?? '0',
+        'Win %': trainer['Tr 90 Win %'] ?? '0',
+        'Pla': trainer['Tr 90 Pla'] ?? '0',
+        'Pla %': trainer['Tr 90 Pla %'] ?? '0',
+        'ROI': trainer['Tr 90 ROI %'] ?? '0',
+      },
+      {
+        'label': '180d',
+        'Races': trainer['Tr 180 Sts'] ?? '0',
+        'Wins': trainer['Tr 180 Win'] ?? '0',
+        'Win %': trainer['Tr 180 Win %'] ?? '0',
+        'Pla': trainer['Tr 180 Pla'] ?? '0',
+        'Pla %': trainer['Tr 180 Pla %'] ?? '0',
+        'ROI': trainer['Tr 180 ROI %'] ?? '0',
+      },
+      {
+        'label': '365d',
+        'Races': trainer['Tr 365 Sts'] ?? '0',
+        'Wins': trainer['Tr 365 Win'] ?? '0',
+        'Win %': trainer['Tr 365 Win %'] ?? '0',
+        'Pla': trainer['Tr 365 Pla'] ?? '0',
+        'Pla %': trainer['Tr 365 Pla %'] ?? '0',
+        'ROI': trainer['Tr 365 ROI %'] ?? '0',
+      },
+      {
+        'label': 'All',
+        'Races': trainer['Tr All Sts'] ?? '0',
+        'Wins': trainer['Tr All Win'] ?? '0',
+        'Win %': trainer['Tr All Win %'] ?? '0',
+        'Pla': trainer['Tr All Pla'] ?? '0',
+        'Pla %': trainer['Tr All Pla %'] ?? '0',
+        'ROI': trainer['Tr All ROI %'] ?? '0',
+      },
+    ];
+
+    return AlertDialog(
+      title: Text('Trainer Stats: ${trainer['Trainer'] ?? 'Unknown'}'),
+      content: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTableTheme(
+          data: const DataTableThemeData(
+            headingRowHeight: 24,
+            dataRowMinHeight: 20,
+            dataRowMaxHeight: 24,
+          ),
+          child: DataTable(
+            headingRowColor: MaterialStateProperty.all(Colors.blue[50]),
+            columns: const [
+              DataColumn(label: Text('', style: TextStyle(fontSize: 12))),
+              DataColumn(label: Text('Races', style: TextStyle(fontSize: 12))),
+              DataColumn(label: Text('Wins (SR)', style: TextStyle(fontSize: 12))),
+              DataColumn(label: Text('Pla (SR)', style: TextStyle(fontSize: 12))),
+              DataColumn(label: Text('ROI', style: TextStyle(fontSize: 12))),
+            ],
+            rows: rows.map((row) {
+              final roiValue = double.tryParse(row['ROI'] ?? '') ?? 0;
+              final roiColor = roiValue >= 0 ? Colors.green : Colors.red;
+
+              String formatStat(String? raw, String? pct) {
+                final intVal = double.tryParse(raw ?? '')?.toInt() ?? 0;
+                final pctVal = double.tryParse(pct ?? '')?.toStringAsFixed(0) ?? '0';
+                return '$intVal ($pctVal%)';
+              }
+
+              return DataRow(cells: [
+                DataCell(Text(row['label'] ?? '', style: const TextStyle(fontSize: 12))),
+                DataCell(right((double.tryParse(row['Races'] ?? '')?.toInt().toString()))),
+                DataCell(right(formatStat(row['Wins'], row['Win %']))),
+                DataCell(right(formatStat(row['Pla'], row['Pla %']))),
+                DataCell(right('${roiValue.toStringAsFixed(1)}%', color: roiColor)),
+              ]);
+            }).toList(),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+}
+
+
+class BarrierStatsPopup extends StatelessWidget {
+  final Map<String, String> runner;
+
+  const BarrierStatsPopup({super.key, required this.runner});
+
+  Color _getROIColor(String roi) {
+    final roiValue = double.tryParse(roi) ?? 0;
+    return roiValue > 0 ? Colors.green : Colors.red;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final barrier = runner;
+
+    final rows = [
+      {
+        'label': '30d',
+        'Races': '<placeholder>',  // Placeholder for now
+        'Wins': '<placeholder>',
+        'Win %': '<placeholder>',
+        'Pla': '<placeholder>',
+        'Pla %': '<placeholder>',
+        'ROI': '<placeholder>',
+      },
+      {
+        'label': '90d',
+        'Races': '<placeholder>',
+        'Wins': '<placeholder>',
+        'Win %': '<placeholder>',
+        'Pla': '<placeholder>',
+        'Pla %': '<placeholder>',
+        'ROI': '<placeholder>',
+      },
+      {
+        'label': '180d',
+        'Races': '<placeholder>',
+        'Wins': '<placeholder>',
+        'Win %': '<placeholder>',
+        'Pla': '<placeholder>',
+        'Pla %': '<placeholder>',
+        'ROI': '<placeholder>',
+      },
+      {
+        'label': '365d',
+        'Races': '<placeholder>',
+        'Wins': '<placeholder>',
+        'Win %': '<placeholder>',
+        'Pla': '<placeholder>',
+        'Pla %': '<placeholder>',
+        'ROI': '<placeholder>',
+      },
+      {
+        'label': 'All',
+        'Races': barrier['Br Sts'] ?? '0',
+        'Wins': barrier['Br Wins'] ?? '0',
+        'Win %': barrier['Br Win %'] ?? '0',
+        'Pla': barrier['Br Places'] ?? '0',
+        'Pla %': barrier['Br Pla %'] ?? '0',
+        'ROI': barrier['Br ROI %'] ?? '0',
+      },
+    ];
+
+    return AlertDialog(
+      title: Text('Barrier Stats: ${barrier['Barrier'] ?? 'Unknown'}'),
+      content: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DataTableTheme(
+              data: const DataTableThemeData(
+                headingRowHeight: 24,
+                dataRowMinHeight: 20,
+                dataRowMaxHeight: 24,
+              ),
+              child: DataTable(
+                headingRowColor: MaterialStateProperty.all(Colors.blue[50]),
+                columns: const [
+                  DataColumn(label: Text('', style: TextStyle(fontSize: 12))),
+                  DataColumn(label: Text('Races', style: TextStyle(fontSize: 12))),
+                  DataColumn(label: Text('Wins (SR)', style: TextStyle(fontSize: 12))),
+                  DataColumn(label: Text('Pla (SR)', style: TextStyle(fontSize: 12))),
+                  DataColumn(label: Text('ROI', style: TextStyle(fontSize: 12))),
+                ],
+                rows: [
+                  {
+                    'label': '180d',
+                    'Races': '<placeholder>',  // Placeholder for now
+                    'Wins': '<placeholder>',
+                    'Win %': '<placeholder>',
+                    'Pla': '<placeholder>',
+                    'Pla %': '<placeholder>',
+                    'ROI': '<placeholder>',
+                  },
+                  {
+                    'label': '365d',
+                    'Races': '<placeholder>',
+                    'Wins': '<placeholder>',
+                    'Win %': '<placeholder>',
+                    'Pla': '<placeholder>',
+                    'Pla %': '<placeholder>',
+                    'ROI': '<placeholder>',
+                  },
+                  {
+                    'label': 'All',
+                    'Races': barrier['Br Sts'] ?? '0',
+                    'Wins': barrier['Br Wins'] ?? '0',
+                    'Win %': barrier['Br Win %'] ?? '0',
+                    'Pla': barrier['Br Places'] ?? '0',
+                    'Pla %': barrier['Br Pla %'] ?? '0',
+                    'ROI': barrier['Br ROI %'] ?? '0',
+                  },
+                ].map((row) {
+                  final roiValue = double.tryParse(row['ROI'] ?? '') ?? 0;
+                  final roiColor = roiValue >= 0 ? Colors.green : Colors.red;
+
+                  String formatStat(String? raw, String? pct) {
+                    final intVal = double.tryParse(raw ?? '')?.toInt() ?? 0;
+                    final pctVal = double.tryParse(pct ?? '')?.toStringAsFixed(0) ?? '0';
+                    return '$intVal ($pctVal%)';
+                  }
+
+                  return DataRow(cells: [
+                    DataCell(Text(row['label'] ?? '', style: const TextStyle(fontSize: 12))),
+                    DataCell(right((double.tryParse(row['Races'] ?? '')?.toInt().toString()))),
+                    DataCell(right(formatStat(row['Wins'], row['Win %']))),
+                    DataCell(right(formatStat(row['Pla'], row['Pla %']))),
+                    DataCell(right('${roiValue.toStringAsFixed(1)}%', color: roiColor)),
+                  ]);
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),  // Add some space between the table and the text
+            Text(
+              'Statistics above relate only where Venue, Distance, Gait and Start Type matches',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+
+
+
+
+  }
+}
