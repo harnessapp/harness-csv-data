@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
+import 'next_up_page.dart';
+import 'csv_utils.dart';
+
 
 void main() {
   runApp(const HarnessApp());
@@ -31,17 +34,32 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Harness App")),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => const UpcomingFieldsPage(),
-            ));
-          },
-          child: const Text("Upcoming Fields"),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const UpcomingFieldsPage(),
+                ));
+              },
+              child: const Text("Upcoming Fields"),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => NextUpPage(),
+                ));
+              },
+              child: const Text("Next Up"),
+            ),
+          ],
         ),
       ),
     );
   }
+
 }
 
 class UpcomingFieldsPage extends StatefulWidget {
@@ -61,17 +79,11 @@ class _UpcomingFieldsPageState extends State<UpcomingFieldsPage> {
   }
 
   Future<List<Map<String, String>>> loadCSV() async {
-    final csvString = await rootBundle.loadString('assets/upcoming_fields.csv');
-    final rows = const CsvToListConverter(eol: '\n').convert(csvString);
-    final headers = rows.first.cast<String>();
+    return await loadCSVFromGitHub();
 
-    return rows.skip(1).map((row) {
-      final Map<String, String> rowMap = {};
-      for (int i = 0; i < headers.length; i++) {
-        rowMap[headers[i]] = row[i]?.toString() ?? '';
-      }
-      return rowMap;
-    }).toList();
+
+
+
   }
 
   Future<List<String>> loadUniqueDates() async {
@@ -148,17 +160,8 @@ class VenuesPage extends StatelessWidget {
   const VenuesPage({super.key, required this.selectedDate});
 
   Future<List<Map<String, String>>> loadCSV() async {
-    final csvString = await rootBundle.loadString('assets/upcoming_fields.csv');
-    final rows = const CsvToListConverter(eol: '\n').convert(csvString);
-    final headers = rows.first.cast<String>();
+    return await loadCSVFromGitHub();
 
-    return rows.skip(1).map((row) {
-      final Map<String, String> rowMap = {};
-      for (int i = 0; i < headers.length; i++) {
-        rowMap[headers[i]] = row[i]?.toString() ?? '';
-      }
-      return rowMap;
-    }).toList();
   }
 
   Future<List<String>> getVenuesForDate() async {
@@ -216,17 +219,9 @@ class RacesPage extends StatelessWidget {
   const RacesPage({super.key, required this.date, required this.venue});
 
   Future<List<Map<String, String>>> loadCSV() async {
-    final csvString = await rootBundle.loadString('assets/upcoming_fields.csv');
-    final rows = const CsvToListConverter(eol: '\n').convert(csvString);
-    final headers = rows.first.cast<String>();
+    return await loadCSVFromGitHub();
 
-    return rows.skip(1).map((row) {
-      final Map<String, String> rowMap = {};
-      for (int i = 0; i < headers.length; i++) {
-        rowMap[headers[i]] = row[i]?.toString() ?? '';
-      }
-      return rowMap;
-    }).toList();
+
   }
 
   Future<List<Map<String, String>>> getRaces() async {
@@ -290,22 +285,7 @@ class RaceDetailsPage extends StatelessWidget {
   const RaceDetailsPage({super.key, required this.race, required this.racesInMeeting});
 
   Future<List<Map<String, String>>> loadCSV() async {
-    final csvString = await rootBundle.loadString('assets/upcoming_fields.csv');
-    final rows = const CsvToListConverter(eol: '\n').convert(csvString);
-    final headers = rows.first.cast<String>();
-    print('Headers:');
-    for (var header in headers) {
-      print('→ "$header"');
-    }
-
-
-    return rows.skip(1).map((row) {
-      final Map<String, String> rowMap = {};
-      for (int i = 0; i < headers.length; i++) {
-        rowMap[headers[i]] = row[i]?.toString() ?? '';
-      }
-      return rowMap;
-    }).toList();
+    return await loadCSVFromGitHub();
   }
 
   String cleanDistance(String distance) {

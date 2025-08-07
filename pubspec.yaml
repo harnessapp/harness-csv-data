@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   csv: ^5.0.2
   cupertino_icons: ^1.0.8
+  intl: ^0.18.1
+  http: ^0.13.5  # ✅ Added for remote CSV fetch
 
 dev_dependencies:
   flutter_test:
@@ -20,16 +22,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/upcoming_fields.csv
-
-
-  # Uncomment and list files here to include assets
-  # assets:
-  #   - assets/upcoming_fields.csv
-
-  # Uncomment and configure if using custom fonts
-  # fonts:
-  #   - family: CustomFont
-  #     fonts:
-  #       - asset: fonts/CustomFont-Regular.ttf
+#  assets:
+#    - assets/upcoming_fields.csv  # ✅ Optional: fallback or testing file
