@@ -22,5 +22,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-#  assets:
-#    - assets/upcoming_fields.csv  # ✅ Optional: fallback or testing file
+  assets:
+    - assets/upcoming_fields.csv  # ✅ Optional: fallback or testing file
+    - assets/Hot Drivers.csv
+    - assets/Hot Drivers 30.csv
+    - assets/Cold Drivers.csv
+    - assets/Cold Drivers 30.csv
+    - assets/Hot Trainers.csv
+    - assets/Hot Trainers 30.csv
+    - assets/Cold Trainers.csv
+    - assets/Cold Trainers 30.csv
