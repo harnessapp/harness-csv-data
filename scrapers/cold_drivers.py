@@ -1,12 +1,24 @@
 import pandas as pd
 from datetime import datetime, timedelta
+from pathlib import Path
 import os
+
+# --- PATH SETUP ---
+# Repo root = one level up from /scrapers
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# Input file
+MERGED_FILE = REPO_ROOT / "merged_file.csv"
+
+# Output file
+OUTPUT_FILE = REPO_ROOT / "Cold Drivers.csv"
 
 # --- CONFIG ---
 DAYS_BACK = 365  # Filter last 365 days
-output_dir = os.path.join("C:\\", "Users", "joel", "FlutterProjects", "harness_app", "assets")  # Add the backslash after C
-file_name = "Cold Drivers.csv"  # Ensure this is your intended output file
-OUTPUT_FILE = os.path.join(output_dir, file_name)
+
+output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+OUTPUT_FILE = str(REPO_ROOT / "Cold Drivers.csv")
+
 
 # --- VENUE CODE AND STATE MAP ---
 venue_code_map = {
@@ -15,7 +27,11 @@ venue_code_map = {
 }
 
 # Load the merged file and strip any extra whitespace from column names
-merged_df = pd.read_csv('merged_file.csv')
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]   # scrapers/ -> repo root
+merged_path = REPO_ROOT / "merged_file.csv"
+merged_df = pd.read_csv(MERGED_FILE)
 
 # Strip any extra whitespace from column names
 merged_df.columns = merged_df.columns.str.strip()

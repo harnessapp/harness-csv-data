@@ -9,6 +9,7 @@ import time
 from typing import Optional
 import os
 import random
+from pathlib import Path
 
 
 # -----------------------------
@@ -25,6 +26,9 @@ RECALC_DRIVER_STATS  = True
 RECALC_TRAINER_STATS = True
 
 PRESERVE_PREVIOUS_STATS_WHEN_SKIPPED = True
+
+REPO_ROOT = Path(__file__).resolve().parents[1]  # scrapers/ -> repo root
+MERGED_PATH = REPO_ROOT / "merged_file.csv"
 
 
 # -----------------------------
