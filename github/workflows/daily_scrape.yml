@@ -1,0 +1,36 @@
+name: Daily Scrape
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 13 * * *'   # 12:30am Sydney during AEDT (UTC+11)
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scrapers/requirements.txt || true
+          pip install pandas requests beautifulsoup4 lxml numpy
+
+      - name: Run scrapers
+        run: |
+          python scrapers/run_scrapers.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "Harness Bot"
+          git config user.email "bot@harnessapp.local"
+          git add -A
+          git commit -m "🔄 Nightly scrape" || echo "No changes to commit"
+          git push
