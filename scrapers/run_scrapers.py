@@ -1,57 +1,37 @@
 import subprocess
+import sys
+from pathlib import Path
 
-print("▶️ Starting scrape_trials.py...")
-subprocess.run(["python", "scrape_trials.py"])
-print("✅ Finished scrape_trials.py.\n")
+# Force all scripts to run as if they were launched from the repo root,
+# so relative outputs land in the repo root (not in scrapers/).
+REPO_ROOT = Path(__file__).resolve().parents[1]  # scrapers/ -> repo root
 
-print("▶️ Starting scrape_results.py...")
-subprocess.run(["python", "scrape_results.py"])
-print("✅ Finished scrape_results.py.\n")
+def run(script_name: str):
+    script_path = REPO_ROOT / "scrapers" / script_name
+    print(f"▶️ Starting {script_name}...")
+    subprocess.run([sys.executable, str(script_path)], cwd=str(REPO_ROOT), check=True)
+    print(f"✅ Finished {script_name}.\n")
 
-print("▶️ Starting cold_drivers.py...")
-subprocess.run(["python", "cold_drivers.py"])
-print("✅ Finished cold_drivers.py.\n")
+def main():
+    run("scrape_trials.py")
+    run("scrape_results.py")
 
-print("▶️ Starting colddrivers30.py...")
-subprocess.run(["python", "colddrivers30.py"])
-print("✅ Finished colddrivers30.py.\n")
+    run("cold_drivers.py")
+    run("colddrivers30.py")
+    run("coldtrainers.py")
+    run("coldtrainers30.py")
 
-print("▶️ Starting coldtrainers.py...")
-subprocess.run(["python", "coldtrainers.py"])
-print("✅ Finished coldtrainers.py.\n")
+    run("hot_drivers.py")
+    run("hotdrivers30.py")
+    run("hot_trainers.py")
+    run("hottrainers30.py")
 
-print("▶️ Starting coldtrainers30.py...")
-subprocess.run(["python", "coldtrainers30.py"])
-print("✅ Finished coldtrainers30.py.\n")
+    run("scrape_fields.py")
+    run("scrape_unicorns.py")
+    run("calc_model_metrics.py")
 
-print("▶️ Starting hot_drivers.py...")
-subprocess.run(["python", "hot_drivers.py"])
-print("✅ Finished hot_drivers.py.\n")
+    # Your uploader (uploads from repo root to harness-csv-data repo root)
+    run("upload_csv_to_github.py")
 
-print("▶️ Starting hotdrivers30.py...")
-subprocess.run(["python", "hotdrivers30.py"])
-print("✅ Finished hotdrivers30.py.\n")
-
-print("▶️ Starting hot_trainers.py...")
-subprocess.run(["python", "hot_trainers.py"])
-print("✅ Finished hot_trainers.py.\n")
-
-print("▶️ Starting hottrainers30.py...")
-subprocess.run(["python", "hottrainers30.py"])
-print("✅ Finished hottrainers30.py.\n")
-
-print("▶️ Starting scrape_fields.py...")
-subprocess.run(["python", "scrape_fields.py"])
-print("✅ Finished scrape_fields.py.")
-
-print("▶️ Starting scrape_unicorns.py...")
-subprocess.run(["python", "scrape_unicorns.py"])
-print("✅ Finished scrape_unicorns.py.")
-
-print("▶️ Starting calc_model_metrics.py...")
-subprocess.run(["python", "calc_model_metrics.py"])
-print("✅ Finished calc_model_metrics.py.")
-
-print("🚀 Uploading to GitHub...")
-subprocess.run(["python", "upload_csv_to_github.py"])
-print("✅ Upload complete.")
+if __name__ == "__main__":
+    main()
