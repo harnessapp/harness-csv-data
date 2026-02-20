@@ -51,7 +51,13 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r scrapers/requirements.txt || true
+          if [ -f "scrapers/requirements.txt" ]; then
+            pip install -r scrapers/requirements.txt
+          elif [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          else
+            echo "ℹ️ No requirements.txt found; installing core deps only"
+          fi
           pip install pandas requests beautifulsoup4 lxml numpy
 
       - name: Run scrape_fields.py only (debug)
