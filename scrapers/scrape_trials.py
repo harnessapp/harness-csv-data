@@ -75,7 +75,29 @@ YOUTUBE_CHANNEL_BY_VENUE = {
 
 
 
-OUTPUT_FILE = "trial_results.csv"   # <-- NEW
+from pathlib import Path
+
+# ============================================================
+# PATHS (GitHub-safe + Windows-safe)
+# ============================================================
+REPO_ROOT = Path(__file__).resolve().parents[1]  # scrapers/ -> repo root
+
+# The ONE source of truth for trial results location
+OUTPUT_FILE = str(REPO_ROOT / "trial_results.csv")
+
+# Keep this alias if your code references TRIAL_RESULTS_CSV anywhere
+TRIAL_RESULTS_CSV = OUTPUT_FILE
+
+# Backups: default to enabled locally, disabled in GitHub via env vars
+BACKUP_ROOT = os.environ.get("BACKUP_ROOT", r"C:\Users\joel\OneDrive\Trotify")
+BACKUPS_ENABLED = os.environ.get("BACKUPS_ENABLED", "1").strip() in ("1", "true", "True", "yes", "YES")
+
+print(f"📁 REPO_ROOT = {REPO_ROOT}", flush=True)
+print(f"📄 trial_results OUTPUT_FILE = {OUTPUT_FILE}", flush=True)
+print(f"📄 exists? {Path(OUTPUT_FILE).exists()}", flush=True)
+if Path(OUTPUT_FILE).exists():
+    print(f"📄 size = {Path(OUTPUT_FILE).stat().st_size} bytes", flush=True)
+
 
 
 # ============================================================
@@ -137,8 +159,6 @@ IGNORE_WIDTHS = {"TO"}              # (can remove if you want)
 print(f"🔧 REBUILD_ONLY={REBUILD_ONLY}")
 
 
-BACKUP_ROOT = r"C:\Users\joel\OneDrive\Trotify"  # <-- your requested folder
-
 # Only try suffix variants for specific venues you care about (manually editable)
 VENUE_SUFFIX_OVERRIDES = {
     "AP": ["", "T", "N", "D"],
@@ -153,7 +173,6 @@ VENUE_SUFFIX_OVERRIDES = {
 
 
 
-TRIAL_RESULTS_CSV = r"C:\harness_scraper\harness_api\trial_results.csv"  # adjust if needed
 
 def build_trial_id_urls_from_csv(
     csv_path: str,
@@ -2872,3 +2891,4 @@ atomic_to_csv(df_all, OUTPUT_FILE)
 print(f"💾 Wrote {OUTPUT_FILE} (new={len(df_new):,}, total={len(df_all):,})")
 print(f"   Phase 1 rows this run: {len(df_p1):,}")
 print(f"   Phase 2 rows this run: {len(df_p2):,}")
+
