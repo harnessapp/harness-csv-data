@@ -2405,7 +2405,7 @@ def add_market_from_merged_model(
     # Ensure ContextAdjSeconds_Up exists (created elsewhere in your pipeline, but be defensive)
     if "ContextAdjSeconds_Up" not in uf.columns:
         uf["ContextAdjSeconds_Up"] = 0.0
-    uf["ContextAdjSeconds_Up"] = pd.to_numeric(uf["ContextAdjSeconds_Up"], errors="coerce").fillna(0.0)
+    uf["ContextAdjSeconds_Up"] = _pd.to_numeric(uf["ContextAdjSeconds_Up"], errors="coerce").fillna(0.0)
 
     # Load only the columns we need from merged_file.csv (keeps memory reasonable)
     mf_cols = [
@@ -2432,23 +2432,23 @@ def add_market_from_merged_model(
 
 
     # Dates + numeric coercion
-    mf["Date"] = pd.to_datetime(mf.get("Date"), errors="coerce", dayfirst=True)
+    mf["Date"] = _pd.to_datetime(mf.get("Date"), errors="coerce", dayfirst=True)
     for c in ["HorseRecentRatingIndHalf_5", "RatingIndHalf", "ExpectedGapSeconds"]:
         if c in mf.columns:
-            mf[c] = pd.to_numeric(mf[c], errors="coerce")
+            mf[c] = _pd.to_numeric(mf[c], errors="coerce")
 
     # Sort so tail() works as "most recent"
     mf = mf.sort_values(["HorseKey", "Date"], kind="mergesort")
 
     # --- build a stable baseline from *recent valid RatingIndHalf* only ---
     # Use last `recent_n` valid runs (not just last run), excluding blowouts and TO.
-    base = pd.Series(dtype=float)
+    base = _pd.Series(dtype=float)
 
     if "RatingIndHalf" in mf.columns:
         m = mf["RatingIndHalf"].notna()
 
         if "MarginClean" in mf.columns:
-            m &= (pd.to_numeric(mf["MarginClean"], errors="coerce").fillna(0) < 99)
+            m &= (_pd.to_numeric(mf["MarginClean"], errors="coerce").fillna(0) < 99)
 
         if "BellPosition" in mf.columns:
             m &= (~mf["BellPosition"].astype(str).str.upper().isin(["TO"]))
@@ -2474,12 +2474,12 @@ def add_market_from_merged_model(
 
 
     # --- stable baseline from Exp Half ---
-    uf["Exp Half"] = pd.to_numeric(uf.get("Exp Half"), errors="coerce").fillna(60.0)
+    uf["Exp Half"] = _pd.to_numeric(uf.get("Exp Half"), errors="coerce").fillna(60.0)
 
     # --- horse "ability offset" relative to its own expectation (prevents Menangle rockets dominating) ---
     # If a horse has been consistently better than expected, it earns a small bonus.
     # Clamp so one track-pattern run can't create a 3s edge.
-    horse_offset = pd.to_numeric(uf["HorseKey"].map(base), errors="coerce") - uf["Exp Half"]
+    horse_offset = _pd.to_numeric(uf["HorseKey"].map(base), errors="coerce") - uf["Exp Half"]
     horse_offset = horse_offset.clip(lower=-1.2, upper=1.2)  # tune bounds
 
     uf["ModelBaseIndHalf"] = uf["Exp Half"] + horse_offset
@@ -2492,7 +2492,7 @@ def add_market_from_merged_model(
             m = mf["ExpectedGapSeconds"].notna()
 
             if "MarginClean" in mf.columns:
-                m &= (pd.to_numeric(mf["MarginClean"], errors="coerce").fillna(0) < 99)
+                m &= (_pd.to_numeric(mf["MarginClean"], errors="coerce").fillna(0) < 99)
 
             if "BellPosition" in mf.columns:
                 m &= (~mf["BellPosition"].astype(str).str.upper().isin(["TO"]))
@@ -2506,21 +2506,21 @@ def add_market_from_merged_model(
                             .mean()
             )
         else:
-            recent_mean_gap = pd.Series(dtype=float)
+            recent_mean_gap = _pd.Series(dtype=float)
 
     else:
-        recent_mean_gap = pd.Series(dtype=float)
+        recent_mean_gap = _pd.Series(dtype=float)
 
     # Map into upcoming
     uf[f"ModelEdgeSeconds_{recent_n}"] = uf["HorseKey"].map(recent_mean_gap)
 
-    uf["ModelBaseIndHalf"] = pd.to_numeric(uf["ModelBaseIndHalf"], errors="coerce")
-    uf[f"ModelEdgeSeconds_{recent_n}"] = pd.to_numeric(uf[f"ModelEdgeSeconds_{recent_n}"], errors="coerce")
+    uf["ModelBaseIndHalf"] = _pd.to_numeric(uf["ModelBaseIndHalf"], errors="coerce")
+    uf[f"ModelEdgeSeconds_{recent_n}"] = _pd.to_numeric(uf[f"ModelEdgeSeconds_{recent_n}"], errors="coerce")
 
     # Effective (lower is better).
     # ContextAdjSeconds_Up is the big lever for "Albion Park fast vs Redcliffe slow" issues.
-    ctx = pd.to_numeric(uf.get("ContextAdjSeconds_Up"), errors="coerce")
-    edge = pd.to_numeric(uf.get(f"ModelEdgeSeconds_{recent_n}"), errors="coerce")
+    ctx = _pd.to_numeric(uf.get("ContextAdjSeconds_Up"), errors="coerce")
+    edge = _pd.to_numeric(uf.get(f"ModelEdgeSeconds_{recent_n}"), errors="coerce")
 
     # Work with what we have: missing adjustments = 0
     ctx = ctx.fillna(0.0)
@@ -2535,7 +2535,7 @@ def add_market_from_merged_model(
 
     # Optional: still compute a race-local ModelRating for display/debug (best = 100)
     def _add_model_rating(g: pd.DataFrame) -> pd.DataFrame:
-        eff = pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
+        eff = _pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
         # If no usable eff, leave blanks
         if eff.notna().sum() == 0:
             g["ModelRating"] = np.nan
@@ -2551,8 +2551,8 @@ def add_market_from_merged_model(
     eps = 1e-9
     tau_seconds = 1.6  # scale for seconds; 1.0 means +1s => exp(-beta) multiplier
 
-    def _weights_from_effective_seconds(g: pd.DataFrame) -> pd.Series:
-        eff = pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
+    def _weights_from_effective_seconds(g: pd.DataFrame) -> _pd.Series:
+        eff = _pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
 
         if method == "linear":
             # Linear: invert seconds so best gets biggest weight.
@@ -2580,13 +2580,13 @@ def add_market_from_merged_model(
 
     def _process_group(g: pd.DataFrame) -> pd.DataFrame:
         # --- effective seconds ---
-        eff = pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
+        eff = _pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
 
         # --- scratches (Barrier=SCR or Driver=SCRATCHED) ---
         barrier = g["Barrier"].astype(str).str.strip().str.upper() if "Barrier" in g.columns else None
         driver  = g["Driver"].astype(str).str.strip().str.upper()  if "Driver"  in g.columns else None
 
-        scratched_mask = pd.Series(False, index=g.index)
+        scratched_mask = _pd.Series(False, index=g.index)
         if barrier is not None:
             scratched_mask |= (barrier == "SCR")
         if driver is not None:
@@ -2643,12 +2643,12 @@ def add_market_from_merged_model(
         # ✅ IMPORTANT:
         # - Fair Odds MUST be RAW if you want sum(100/Fair Odds) ~= target_book_pct
         # - Any compression/rounding MUST go into a separate display-only column
-        odds_book_raw_series = pd.Series(odds_book_raw, index=active.index).astype(float)
+        odds_book_raw_series = _pd.Series(odds_book_raw, index=active.index).astype(float)
         odds_book_display_series = odds_book_raw_series.apply(compress_odds).astype(float)
 
         # Fill active frame
         active["Fair % (100)"] = fair_pct_100
-        active["Fair Odds (100)"] = pd.Series(odds_100_raw, index=active.index).astype(float)
+        active["Fair Odds (100)"] = _pd.Series(odds_100_raw, index=active.index).astype(float)
 
         active["Fair %"] = fair_pct_book
         active["Fair Odds"] = odds_book_raw_series
@@ -4078,6 +4078,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
