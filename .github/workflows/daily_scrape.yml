@@ -35,7 +35,7 @@ jobs:
           fi
 
           echo "⚠️ merged_file.csv not present. Seeding from Release..."
-          if [ "$RELEASE_MERGED_URL" = "PASTE_YOUR_RELEASE_ASSET_URL_HERE" ]; then
+          if [ "$RELEASE_MERGED_URL" = "https://github.com/harnessapp/harness-csv-data/releases/download/seed-merged/merged_file.csv" ]; then
             echo "❌ You must paste RELEASE_MERGED_URL in the workflow."
             exit 1
           fi
