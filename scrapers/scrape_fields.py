@@ -2352,9 +2352,6 @@ def add_market_from_merged_model(
     recent_n: int = 5,
     debug_horse: Optional[str] = None,
 ):
-
-
-
     """
     Build Fair % / Fair Odds using the master model signals in merged_file.csv.
 
@@ -2378,12 +2375,13 @@ def add_market_from_merged_model(
         where tau is a seconds scale (we use 1.0s).
       - This means: +1.0s slower => weight * exp(-beta)
     """
+    import os
+    import pandas as _pd  # ✅ use ONLY _pd inside this function to avoid pd scoping bugs
 
-
-
-
+    # ----------------------------
+    # Load upcoming_fields
+    # ----------------------------
     try:
-        import pandas as _pd  # avoids any accidental local 'pd' shadowing
         uf = _pd.read_csv("upcoming_fields.csv")
     except Exception as e:
         print(f"⚠️ Failed to read upcoming_fields.csv: {e}")
@@ -2401,13 +2399,14 @@ def add_market_from_merged_model(
         print("⚠️ 'Horse' column not found in upcoming_fields.csv; skipping add_market_from_merged_model()")
         return
 
-
     # Ensure ContextAdjSeconds_Up exists (created elsewhere in your pipeline, but be defensive)
     if "ContextAdjSeconds_Up" not in uf.columns:
         uf["ContextAdjSeconds_Up"] = 0.0
     uf["ContextAdjSeconds_Up"] = _pd.to_numeric(uf["ContextAdjSeconds_Up"], errors="coerce").fillna(0.0)
 
-    # Load only the columns we need from merged_file.csv (keeps memory reasonable)
+    # ----------------------------
+    # Load only columns needed from merged_file
+    # ----------------------------
     mf_cols = [
         "Horse", "Date",
         "HorseRecentRatingIndHalf_5", "RatingIndHalf", "ExpectedGapSeconds",
@@ -2415,7 +2414,7 @@ def add_market_from_merged_model(
     ]
 
     try:
-        mf = pd.read_csv("merged_file.csv", low_memory=False, usecols=lambda c: c in mf_cols)
+        mf = _pd.read_csv("merged_file.csv", low_memory=False, usecols=lambda c: c in mf_cols)
     except Exception as e:
         print(f"⚠️ Failed to read merged_file.csv for model market: {e}")
         return
@@ -2430,7 +2429,6 @@ def add_market_from_merged_model(
         print("\n🧪 merged_file history for", debug_horse)
         print(d.to_string(index=False))
 
-
     # Dates + numeric coercion
     mf["Date"] = _pd.to_datetime(mf.get("Date"), errors="coerce", dayfirst=True)
     for c in ["HorseRecentRatingIndHalf_5", "RatingIndHalf", "ExpectedGapSeconds"]:
@@ -2441,7 +2439,6 @@ def add_market_from_merged_model(
     mf = mf.sort_values(["HorseKey", "Date"], kind="mergesort")
 
     # --- build a stable baseline from *recent valid RatingIndHalf* only ---
-    # Use last `recent_n` valid runs (not just last run), excluding blowouts and TO.
     base = _pd.Series(dtype=float)
 
     if "RatingIndHalf" in mf.columns:
@@ -2462,7 +2459,6 @@ def add_market_from_merged_model(
             "Race Anchor" in uf.columns
         )
 
-        # recent mean rating per horse (last recent_n valid runs)
         base = (
             mf_valid.groupby("HorseKey", sort=False)
                     .tail(recent_n)
@@ -2470,44 +2466,32 @@ def add_market_from_merged_model(
                     .mean()
         )
 
-    # if base ends up empty for some reason, keep it as empty Series
-
-
     # --- stable baseline from Exp Half ---
     uf["Exp Half"] = _pd.to_numeric(uf.get("Exp Half"), errors="coerce").fillna(60.0)
 
-    # --- horse "ability offset" relative to its own expectation (prevents Menangle rockets dominating) ---
-    # If a horse has been consistently better than expected, it earns a small bonus.
-    # Clamp so one track-pattern run can't create a 3s edge.
+    # --- horse "ability offset" relative to its own expectation ---
     horse_offset = _pd.to_numeric(uf["HorseKey"].map(base), errors="coerce") - uf["Exp Half"]
     horse_offset = horse_offset.clip(lower=-1.2, upper=1.2)  # tune bounds
-
     uf["ModelBaseIndHalf"] = uf["Exp Half"] + horse_offset
 
-
-
-    # Recent mean ExpectedGapSeconds per horse (last recent_n runs)
+    # Recent mean ExpectedGapSeconds per horse (last recent_n valid runs)
     if "ExpectedGapSeconds" in mf.columns:
-        if "ExpectedGapSeconds" in mf.columns:
-            m = mf["ExpectedGapSeconds"].notna()
+        m = mf["ExpectedGapSeconds"].notna()
 
-            if "MarginClean" in mf.columns:
-                m &= (_pd.to_numeric(mf["MarginClean"], errors="coerce").fillna(0) < 99)
+        if "MarginClean" in mf.columns:
+            m &= (_pd.to_numeric(mf["MarginClean"], errors="coerce").fillna(0) < 99)
 
-            if "BellPosition" in mf.columns:
-                m &= (~mf["BellPosition"].astype(str).str.upper().isin(["TO"]))
+        if "BellPosition" in mf.columns:
+            m &= (~mf["BellPosition"].astype(str).str.upper().isin(["TO"]))
 
-            mf_gap_valid = mf.loc[m].copy()
+        mf_gap_valid = mf.loc[m].copy()
 
-            recent_mean_gap = (
-                mf_gap_valid.groupby("HorseKey", sort=False)
-                            .tail(recent_n)
-                            .groupby("HorseKey")["ExpectedGapSeconds"]
-                            .mean()
-            )
-        else:
-            recent_mean_gap = _pd.Series(dtype=float)
-
+        recent_mean_gap = (
+            mf_gap_valid.groupby("HorseKey", sort=False)
+                        .tail(recent_n)
+                        .groupby("HorseKey")["ExpectedGapSeconds"]
+                        .mean()
+        )
     else:
         recent_mean_gap = _pd.Series(dtype=float)
 
@@ -2517,14 +2501,9 @@ def add_market_from_merged_model(
     uf["ModelBaseIndHalf"] = _pd.to_numeric(uf["ModelBaseIndHalf"], errors="coerce")
     uf[f"ModelEdgeSeconds_{recent_n}"] = _pd.to_numeric(uf[f"ModelEdgeSeconds_{recent_n}"], errors="coerce")
 
-    # Effective (lower is better).
-    # ContextAdjSeconds_Up is the big lever for "Albion Park fast vs Redcliffe slow" issues.
-    ctx = _pd.to_numeric(uf.get("ContextAdjSeconds_Up"), errors="coerce")
-    edge = _pd.to_numeric(uf.get(f"ModelEdgeSeconds_{recent_n}"), errors="coerce")
-
-    # Work with what we have: missing adjustments = 0
-    ctx = ctx.fillna(0.0)
-    edge = edge.fillna(0.0)
+    # Effective (lower is better)
+    ctx = _pd.to_numeric(uf.get("ContextAdjSeconds_Up"), errors="coerce").fillna(0.0)
+    edge = _pd.to_numeric(uf.get(f"ModelEdgeSeconds_{recent_n}"), errors="coerce").fillna(0.0)
 
     uf["ModelEffectiveIndHalf"] = (
         uf["ModelBaseIndHalf"]
@@ -2532,57 +2511,45 @@ def add_market_from_merged_model(
         + edge_weight * edge
     )
 
-
-    # Optional: still compute a race-local ModelRating for display/debug (best = 100)
-    def _add_model_rating(g: pd.DataFrame) -> pd.DataFrame:
+    # Optional: race-local ModelRating for display/debug (best = 100)
+    def _add_model_rating(g: _pd.DataFrame) -> _pd.DataFrame:
         eff = _pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
-        # If no usable eff, leave blanks
         if eff.notna().sum() == 0:
             g["ModelRating"] = np.nan
             return g
         ranks = eff.rank(method="dense", ascending=True)  # 1 = best (fastest)
-        g["ModelRating"] = 101.0 - ranks  # best -> 100, next -> 99, etc.
+        g["ModelRating"] = 101.0 - ranks
         return g
 
     uf = uf.groupby(race_key, group_keys=False).apply(_add_model_rating)
 
-
     # ----- MARKET BUILDER (seconds-based) -----
     eps = 1e-9
-    tau_seconds = 1.6  # scale for seconds; 1.0 means +1s => exp(-beta) multiplier
+    tau_seconds = 1.6
 
-    def _weights_from_effective_seconds(g: pd.DataFrame) -> _pd.Series:
+    def _weights_from_effective_seconds(g: _pd.DataFrame) -> _pd.Series:
         eff = _pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
 
         if method == "linear":
-            # Linear: invert seconds so best gets biggest weight.
-            # Not recommended, but kept for compatibility.
             best = eff.min(skipna=True)
             w = (best - eff).clip(lower=0) + eps
             w = w.fillna(0.0) + eps
-
-            # Debugging: Print the weights distribution for "linear" method
-            print(f"Weights distribution (linear): {w.describe()}")  # Print weights distribution stats
+            print(f"Weights distribution (linear): {w.describe()}")
             return w
 
         if method == "exp":
             best = eff.min(skipna=True)
-            delta = (eff - best) / tau_seconds  # 0 for best, positive for slower
+            delta = (eff - best) / tau_seconds
             w = np.exp(-beta * delta.fillna(np.inf))
             w = w.replace([np.inf, -np.inf], 0.0).fillna(0.0) + eps
-
-            # Debugging: Print the weights distribution for "exp" method
-            print(f"Weights distribution (exp): {w.describe()}")  # Print weights distribution stats
+            print(f"Weights distribution (exp): {w.describe()}")
             return w
 
         raise ValueError("method must be 'linear' or 'exp'")
 
-
-    def _process_group(g: pd.DataFrame) -> pd.DataFrame:
-        # --- effective seconds ---
+    def _process_group(g: _pd.DataFrame) -> _pd.DataFrame:
         eff = _pd.to_numeric(g["ModelEffectiveIndHalf"], errors="coerce")
 
-        # --- scratches (Barrier=SCR or Driver=SCRATCHED) ---
         barrier = g["Barrier"].astype(str).str.strip().str.upper() if "Barrier" in g.columns else None
         driver  = g["Driver"].astype(str).str.strip().str.upper()  if "Driver"  in g.columns else None
 
@@ -2592,61 +2559,48 @@ def add_market_from_merged_model(
         if driver is not None:
             scratched_mask |= (driver == "SCRATCHED")
 
-        # --- only price valid, non-scratched runners ---
         mask = eff.notna() & (~scratched_mask)
         active = g.loc[mask].copy()
 
         # Always start blank; we'll only fill priced runners
-        g["Fair %"] = np.nan                 # BOOK % (sums to target_book_pct)
-        g["Fair Odds"] = np.nan              # BOOK ODDS (RAW; implied sums to target_book_pct)
-        g["Fair Odds Display"] = np.nan      # Optional compressed odds for UI only
-        g["RaceOverround"] = np.nan          # should be ~target_book_pct
+        g["Fair %"] = np.nan
+        g["Fair Odds"] = np.nan
+        g["Fair Odds Display"] = np.nan
+        g["RaceOverround"] = np.nan
 
-        g["Fair % (100)"] = np.nan           # TRUE % (sums to 100)
-        g["Fair Odds (100)"] = np.nan        # TRUE ODDS (RAW)
-        g["RaceOverround (100)"] = np.nan    # should be ~100
+        g["Fair % (100)"] = np.nan
+        g["Fair Odds (100)"] = np.nan
+        g["RaceOverround (100)"] = np.nan
 
         if active.empty:
             return g
 
-        # --- weights (your existing function) ---
         w = _weights_from_effective_seconds(active)
-
-        # Make absolutely sure weights are numeric 1D array
         w = np.asarray(w, dtype="float64").reshape(-1)
 
         s = float(np.nansum(w))
         if not np.isfinite(s) or s <= 0:
             return g
 
-        probs = w / s  # sums to 1
+        probs = w / s
 
-        # OPTIONAL: flatten to reduce $1.10 pops (set to 1.0 to disable)
-        flatten_power = 1.3  # 1.0 = no flatten; >1 favs shorter; <1 flatter market
+        flatten_power = 1.3
         if flatten_power != 1.0:
             probs = np.power(probs, flatten_power)
             probs = probs / probs.sum()
 
-        # -----------------------------
         # TRUE (100%) MARKET
-        # -----------------------------
         fair_pct_100 = probs * 100.0
-        odds_100_raw = np.where(fair_pct_100 > 0, 100.0 / fair_pct_100, np.nan)  # == 1/prob
+        odds_100_raw = np.where(fair_pct_100 > 0, 100.0 / fair_pct_100, np.nan)
 
-        # -----------------------------
         # BOOK (target_book_pct) MARKET
-        # -----------------------------
-        book_pct = float(target_book_pct)  # e.g. 125.0
+        book_pct = float(target_book_pct)
         fair_pct_book = probs * book_pct
         odds_book_raw = np.where(fair_pct_book > 0, 100.0 / fair_pct_book, np.nan)
 
-        # ✅ IMPORTANT:
-        # - Fair Odds MUST be RAW if you want sum(100/Fair Odds) ~= target_book_pct
-        # - Any compression/rounding MUST go into a separate display-only column
         odds_book_raw_series = _pd.Series(odds_book_raw, index=active.index).astype(float)
         odds_book_display_series = odds_book_raw_series.apply(compress_odds).astype(float)
 
-        # Fill active frame
         active["Fair % (100)"] = fair_pct_100
         active["Fair Odds (100)"] = _pd.Series(odds_100_raw, index=active.index).astype(float)
 
@@ -2654,11 +2608,9 @@ def add_market_from_merged_model(
         active["Fair Odds"] = odds_book_raw_series
         active["Fair Odds Display"] = odds_book_display_series
 
-        # Race-level overrounds (set on all rows in race for convenience)
         g["RaceOverround"] = float(active["Fair %"].sum())
         g["RaceOverround (100)"] = float(active["Fair % (100)"].sum())
 
-        # --- write back (only active runners) ---
         g.loc[active.index, "Fair %"] = active["Fair %"]
         g.loc[active.index, "Fair Odds"] = active["Fair Odds"]
         g.loc[active.index, "Fair Odds Display"] = active["Fair Odds Display"]
@@ -2670,21 +2622,18 @@ def add_market_from_merged_model(
 
         return g
 
-
+    # DEBUG: confirm runtime vs file header (no 'pd' usage!)
     print("DEBUG groupby keys:", race_key)
     print("DEBUG has RaceAnchorFull:", "RaceAnchorFull" in uf.columns)
-    print("DEBUG columns:", list(uf.columns))
-
-    import os
-    import pandas as pd
+    print("DEBUG columns (first 60):", list(uf.columns)[:60])
 
     print("DEBUG cwd:", os.getcwd())
     print("DEBUG upcoming_fields.csv exists:", os.path.exists("upcoming_fields.csv"))
-
     if os.path.exists("upcoming_fields.csv"):
-        hdr = pd.read_csv("upcoming_fields.csv", nrows=0).columns.tolist()
+        hdr = _pd.read_csv("upcoming_fields.csv", nrows=0).columns.tolist()
         print("DEBUG file header has RaceAnchorFull:", "RaceAnchorFull" in hdr)
         print("DEBUG file header has Race Anchor:", "Race Anchor" in hdr)
+        print("DEBUG file header has Fair Odds:", "Fair Odds" in hdr)
 
     uf = uf.groupby(race_key, group_keys=False).apply(_process_group)
 
@@ -2709,8 +2658,6 @@ def add_market_from_merged_model(
             print("\n🎯 Fair Odds debug for:", debug_horse)
             print(hit[cols].to_string(index=False))
             print()
-
-
 
     try:
         uf.drop(columns=["HorseKey"], inplace=True, errors="ignore")
@@ -4078,6 +4025,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
