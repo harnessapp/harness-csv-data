@@ -2453,6 +2453,13 @@ def add_market_from_merged_model(
 
         mf_valid = mf.loc[m].copy()
 
+        # DEBUG: confirm which race id columns are present at this stage
+        print(
+            "DEBUG id columns present:",
+            "RaceAnchorFull" in uf.columns,
+            "Race Anchor" in uf.columns
+        )
+
         # recent mean rating per horse (last recent_n valid runs)
         base = (
             mf_valid.groupby("HorseKey", sort=False)
@@ -4069,6 +4076,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
