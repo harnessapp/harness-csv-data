@@ -13,13 +13,36 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Try to pull yesterday's merged_file.csv from the previous run
+      # 1) Try to pull yesterday's merged_file.csv from the previous workflow run
       - name: Download previous merged_file.csv (artifact)
+        id: dl_artifact
         uses: actions/download-artifact@v4
         with:
           name: merged-file
           path: .
         continue-on-error: true
+
+      # 2) If artifact was not found, seed from a GitHub Release asset (ONE-TIME)
+      - name: Seed merged_file.csv from Release asset (if missing)
+        if: always()
+        env:
+          RELEASE_MERGED_URL: "PASTE_YOUR_RELEASE_ASSET_URL_HERE"
+        run: |
+          if [ -f "merged_file.csv" ]; then
+            echo "✅ merged_file.csv already present (artifact download worked)."
+            ls -lah merged_file.csv
+            exit 0
+          fi
+
+          echo "⚠️ merged_file.csv not present. Seeding from Release..."
+          if [ "$RELEASE_MERGED_URL" = "PASTE_YOUR_RELEASE_ASSET_URL_HERE" ]; then
+            echo "❌ You must paste RELEASE_MERGED_URL in the workflow."
+            exit 1
+          fi
+
+          curl -L "$RELEASE_MERGED_URL" -o merged_file.csv
+          echo "✅ Seed downloaded."
+          ls -lah merged_file.csv
 
       - name: Debug — confirm merged_file.csv present
         run: |
@@ -37,10 +60,13 @@ jobs:
           pip install pandas requests beautifulsoup4 lxml numpy
 
       - name: Run scrapers
+        env:
+          BACKUPS_ENABLED: "0"
+          BACKUP_ROOT: "./_backups"
         run: |
           python -u scrapers/run_scrapers.py
 
-      # Save merged_file.csv for the NEXT run (even if later steps fail)
+      # 3) Save merged_file.csv for the NEXT run
       - name: Upload merged_file.csv (artifact for next run)
         if: always()
         uses: actions/upload-artifact@v4
