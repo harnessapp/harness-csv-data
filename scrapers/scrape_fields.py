@@ -107,7 +107,7 @@ def generate_next_target_dates():
     # Generate the next 7 days' target dates (in the format DDMMYY)
     current_date = datetime.today()
     target_dates = []
-    for i in range(2):
+    for i in range(1):
         target_day = current_date + timedelta(days=i)
         target_dates.append(target_day.strftime("%d%m%y"))
     return target_dates
@@ -2666,25 +2666,50 @@ def add_market_from_merged_model(
 
         return g
 
-    # DEBUG: confirm runtime vs file header (no 'pd' usage!)
-    print("DEBUG groupby keys:", race_key)
-    print("DEBUG has RaceAnchorFull:", "RaceAnchorFull" in uf.columns)
+    # ------------------------------
+    # DEBUG + HARD GUARANTEE (race key)
+    # ------------------------------
+
+    print("DEBUG groupby keys (initial):", race_key)
+    print("DEBUG has RaceAnchorFull (before fix):", "RaceAnchorFull" in uf.columns)
     print("DEBUG columns (first 60):", list(uf.columns)[:60])
 
     print("DEBUG cwd:", os.getcwd())
     print("DEBUG upcoming_fields.csv exists:", os.path.exists("upcoming_fields.csv"))
+
     if os.path.exists("upcoming_fields.csv"):
         hdr = _pd.read_csv("upcoming_fields.csv", nrows=0).columns.tolist()
         print("DEBUG file header has RaceAnchorFull:", "RaceAnchorFull" in hdr)
         print("DEBUG file header has Race Anchor:", "Race Anchor" in hdr)
         print("DEBUG file header has Fair Odds:", "Fair Odds" in hdr)
 
+    # --- HARD GUARANTEE: ensure RaceAnchorFull exists in-memory ---
+    if "RaceAnchorFull" not in uf.columns:
+        print("⚠️ RaceAnchorFull missing in-memory. Rebuilding from Race Anchor + Race No.")
 
-    # Final sanity check before grouping (prevents KeyError)
-    if race_key not in uf.columns:
-        print(f"⚠️ Groupby abort: '{race_key}' missing. Columns include RaceAnchorFull? {'RaceAnchorFull' in uf.columns}, Race Anchor? {'Race Anchor' in uf.columns}")
-        print("DEBUG available columns (first 80):", list(uf.columns)[:80])
+        if "Race Anchor" in uf.columns and "Race No" in uf.columns:
+            ra = uf["Race Anchor"].astype(str).fillna("").str.strip()
+            rn = uf["Race No"].astype(str).fillna("").str.strip()
+            uf["RaceAnchorFull"] = (ra + "_R" + rn).str.strip()
+            print("✅ Rebuilt RaceAnchorFull in-memory.")
+        else:
+            print("❌ Cannot rebuild RaceAnchorFull (missing Race Anchor or Race No). Falling back to Race Anchor.")
+
+    # Final safety: choose grouping key dynamically
+    if "RaceAnchorFull" in uf.columns:
+        race_key = "RaceAnchorFull"
+    elif "Race Anchor" in uf.columns:
+        race_key = "Race Anchor"
+    else:
+        print("❌ No usable race key found. Aborting market build.")
         return
+
+    print("DEBUG groupby keys (final):", race_key)
+    print("DEBUG has RaceAnchorFull (after fix):", "RaceAnchorFull" in uf.columns)
+
+    # ------------------------------
+    # SAFE GROUPBY
+    # ------------------------------
     uf = uf.groupby(race_key, group_keys=False).apply(_process_group)
 
     # --- DEBUG PRINT (single runner) ---
@@ -4075,6 +4100,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
