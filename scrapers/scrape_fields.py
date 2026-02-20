@@ -329,39 +329,49 @@ def snapshot_published_markets(
 
 
 
-def backup_python_script_daily(src_file: str, backup_dir: str, keep_last: int = 7):
+def backup_python_script_daily(src_file, backup_dir, keep_last=7):
     """
-    Backs up the python script to the specified backup directory and keeps the last 'keep_last' backups.
+    Daily backup of a python script. Skips automatically when BACKUPS_ENABLED=0
+    (e.g. on GitHub Actions).
+    """
+    import os
+    import shutil
+    from datetime import datetime
 
-    :param src_file: The path to the source file (scrape_fields.py)
-    :param backup_dir: The backup directory where the file will be saved
-    :param keep_last: Number of backups to keep
-    """
-    # Ensure backup directory exists
-    if not os.path.exists(backup_dir):
-        os.makedirs(backup_dir)
-    
-    # Get the current date to append to the backup filename
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    backup_filename = f"scrape_fields_{current_date}.py"
-    backup_path = os.path.join(backup_dir, backup_filename)
-    
-    # Copy the source file to the backup directory
-    shutil.copy2(src_file, backup_path)  # copy2 preserves metadata like timestamps
-    
-    # Manage the number of backups (delete older ones if exceeding the limit)
-    backup_files = sorted(
-        [f for f in os.listdir(backup_dir) if f.startswith("scrape_fields_")],
-        reverse=True
-    )
-    
-    # If there are more than 'keep_last' backups, remove the oldest ones
-    if len(backup_files) > keep_last:
-        for old_backup in backup_files[keep_last:]:
-            os.remove(os.path.join(backup_dir, old_backup))
-        print(f"Removed older backups, keeping the latest {keep_last} backups.")
-    else:
-        print(f"Backup created: {backup_filename}")
+    # ✅ Skip backups when disabled (GitHub Actions)
+    if os.getenv("BACKUPS_ENABLED", "1").strip() in ("0", "false", "False", "no", "NO"):
+        print("ℹ️ BACKUPS_ENABLED=0 — skipping python script backup.")
+        return
+
+    # Resolve to an absolute path if a relative path was provided
+    src_file = os.path.abspath(src_file)
+
+    if not os.path.exists(src_file):
+        print(f"⚠️ backup_python_script_daily: source file not found: {src_file} — skipping.")
+        return
+
+    os.makedirs(backup_dir, exist_ok=True)
+
+    base = os.path.basename(src_file)
+    stamp = datetime.now().strftime("%Y%m%d")
+    backup_path = os.path.join(backup_dir, f"{base}.{stamp}.bak")
+
+    shutil.copy2(src_file, backup_path)
+    print(f"✅ Backed up script to {backup_path}")
+
+    # Keep last N backups for this script
+    try:
+        backups = sorted(
+            [f for f in os.listdir(backup_dir) if f.startswith(base + ".") and f.endswith(".bak")]
+        )
+        if len(backups) > keep_last:
+            for f in backups[: len(backups) - keep_last]:
+                try:
+                    os.remove(os.path.join(backup_dir, f))
+                except Exception:
+                    pass
+    except Exception:
+        pass
 
 
 
@@ -4039,6 +4049,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
