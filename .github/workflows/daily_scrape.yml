@@ -26,7 +26,7 @@ jobs:
       - name: Seed merged_file.csv from Release asset (if missing)
         if: always()
         env:
-          RELEASE_MERGED_URL: "PASTE_YOUR_RELEASE_ASSET_URL_HERE"
+          RELEASE_MERGED_URL: "https://github.com/harnessapp/harness-csv-data/releases/download/seed-merged/merged_file.csv"
         run: |
           if [ -f "merged_file.csv" ]; then
             echo "✅ merged_file.csv already present (artifact download worked)."
