@@ -2387,13 +2387,21 @@ def add_market_from_merged_model(
         print(f"⚠️ Failed to read upcoming_fields.csv: {e}")
         return
 
-    # Race key
-    race_key = "RaceAnchorFull" if "RaceAnchorFull" in uf.columns else (
-        "Race Anchor" if "Race Anchor" in uf.columns else None
-    )
-    if race_key is None:
-        print("⚠️ No race key column found; skipping add_market_from_merged_model()")
+    # Race key (must exist in the *current uf* at runtime)
+    if "RaceAnchorFull" in uf.columns:
+        race_key = "RaceAnchorFull"
+    elif "Race Anchor" in uf.columns:
+        race_key = "Race Anchor"
+    else:
+        print("⚠️ No race key column found in uf; skipping add_market_from_merged_model()")
+        print("DEBUG available columns (first 80):", list(uf.columns)[:80])
         return
+
+# Defensive: fail early if pandas would KeyError anyway
+if race_key not in uf.columns:
+    print(f"⚠️ race_key='{race_key}' not found in uf.columns; cannot group.")
+    print("DEBUG available columns (first 80):", list(uf.columns)[:80])
+    return
 
     if "Horse" not in uf.columns:
         print("⚠️ 'Horse' column not found in upcoming_fields.csv; skipping add_market_from_merged_model()")
@@ -2635,6 +2643,12 @@ def add_market_from_merged_model(
         print("DEBUG file header has Race Anchor:", "Race Anchor" in hdr)
         print("DEBUG file header has Fair Odds:", "Fair Odds" in hdr)
 
+
+    # Final sanity check before grouping (prevents KeyError)
+    if race_key not in uf.columns:
+        print(f"⚠️ Groupby abort: '{race_key}' missing. Columns include RaceAnchorFull? {'RaceAnchorFull' in uf.columns}, Race Anchor? {'Race Anchor' in uf.columns}")
+        print("DEBUG available columns (first 80):", list(uf.columns)[:80])
+        return
     uf = uf.groupby(race_key, group_keys=False).apply(_process_group)
 
     # --- DEBUG PRINT (single runner) ---
@@ -4025,6 +4039,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
