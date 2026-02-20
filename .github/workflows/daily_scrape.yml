@@ -54,11 +54,12 @@ jobs:
           pip install -r scrapers/requirements.txt || true
           pip install pandas requests beautifulsoup4 lxml numpy
 
-      - name: Run scrapers
+      - name: Run scrape_fields.py only (debug)
         env:
           BACKUPS_ENABLED: "0"
         run: |
-          python -u scrapers/run_scrapers.py
+          set -e
+          python -u scrapers/scrape_fields.py
 
       # Save merged_file.csv for tomorrow's run
       - name: Upload merged_file.csv (artifact for next run)
