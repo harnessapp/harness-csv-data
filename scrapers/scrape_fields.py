@@ -2666,6 +2666,17 @@ def add_market_from_merged_model(
     print("DEBUG has RaceAnchorFull:", "RaceAnchorFull" in uf.columns)
     print("DEBUG columns:", list(uf.columns))
 
+    import os
+    import pandas as pd
+
+    print("DEBUG cwd:", os.getcwd())
+    print("DEBUG upcoming_fields.csv exists:", os.path.exists("upcoming_fields.csv"))
+
+    if os.path.exists("upcoming_fields.csv"):
+        hdr = pd.read_csv("upcoming_fields.csv", nrows=0).columns.tolist()
+        print("DEBUG file header has RaceAnchorFull:", "RaceAnchorFull" in hdr)
+        print("DEBUG file header has Race Anchor:", "Race Anchor" in hdr)
+
     uf = uf.groupby(race_key, group_keys=False).apply(_process_group)
 
     # --- DEBUG PRINT (single runner) ---
@@ -4049,4 +4060,5 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
