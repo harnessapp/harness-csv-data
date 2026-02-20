@@ -2397,11 +2397,11 @@ def add_market_from_merged_model(
         print("DEBUG available columns (first 80):", list(uf.columns)[:80])
         return
 
-# Defensive: fail early if pandas would KeyError anyway
-if race_key not in uf.columns:
-    print(f"⚠️ race_key='{race_key}' not found in uf.columns; cannot group.")
-    print("DEBUG available columns (first 80):", list(uf.columns)[:80])
-    return
+    # Defensive: fail early if pandas would KeyError anyway
+    if race_key not in uf.columns:
+        print(f"⚠️ race_key='{race_key}' not found in uf.columns; cannot group.")
+        print("DEBUG available columns (first 80):", list(uf.columns)[:80])
+        return
 
     if "Horse" not in uf.columns:
         print("⚠️ 'Horse' column not found in upcoming_fields.csv; skipping add_market_from_merged_model()")
@@ -4039,6 +4039,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
