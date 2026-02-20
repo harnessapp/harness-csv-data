@@ -29,8 +29,10 @@ jobs:
         env:
           RELEASE_MERGED_URL: "https://github.com/harnessapp/harness-csv-data/releases/download/seed-merged/merged_file.csv"
         run: |
-          if [ -f "merged_file.csv" ]; then
-            echo "✅ merged_file.csv already present."
+          set -e
+
+          if [ -f "merged_file.csv" ] && [ -s "merged_file.csv" ]; then
+            echo "✅ merged_file.csv already present and non-empty."
             ls -lah merged_file.csv
             exit 0
           fi
@@ -43,8 +45,17 @@ jobs:
             "$RELEASE_MERGED_URL" \
             -o merged_file.csv
 
-          echo "✅ Seed downloaded:"
+          # Validate download
+          if [ ! -f "merged_file.csv" ] || [ ! -s "merged_file.csv" ]; then
+            echo "❌ Seed download failed or file is empty."
+            exit 1
+          fi
+
+          echo "✅ Seed downloaded successfully:"
           ls -lah merged_file.csv
+
+          echo "Row count:"
+          wc -l merged_file.csv
 
       - name: Set up Python
         uses: actions/setup-python@v5
