@@ -2393,6 +2393,32 @@ def add_market_from_merged_model(
     # ----------------------------
     try:
         uf = _pd.read_csv("upcoming_fields.csv")
+
+        # --- Ensure RaceAnchorFull exists: "{Race Anchor}_R{Race No}" e.g. "AP200226_R1" ---
+        # Do NOT remove or rename "Race Anchor" — you want both.
+        if "RaceAnchorFull" not in uf.columns:
+            uf["RaceAnchorFull"] = ""
+
+        # Normalise inputs
+        ra = uf["Race Anchor"].astype(str).fillna("").str.strip() if "Race Anchor" in uf.columns else _pd.Series("", index=uf.index)
+        rn = uf["Race No"].astype(str).fillna("").str.strip() if "Race No" in uf.columns else _pd.Series("", index=uf.index)
+
+        # Fill only missing/blank RaceAnchorFull
+        raf = uf["RaceAnchorFull"].astype(str).fillna("").str.strip()
+        missing = (raf == "") | (raf.str.lower() == "nan")
+
+        # Build
+        built = (ra + "_R" + rn).str.strip()
+
+        # Only assign where we have both parts
+        ok = missing & (ra != "") & (rn != "")
+        uf.loc[ok, "RaceAnchorFull"] = built.loc[ok]
+
+        print(
+            "✅ RaceAnchorFull present. Non-empty %:",
+            round((uf["RaceAnchorFull"].astype(str).str.strip() != "").mean() * 100, 1)
+        )
+
     except Exception as e:
         print(f"⚠️ Failed to read upcoming_fields.csv: {e}")
         return
@@ -4049,6 +4075,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
