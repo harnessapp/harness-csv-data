@@ -2662,6 +2662,10 @@ def add_market_from_merged_model(
         return g
 
 
+    print("DEBUG groupby keys:", race_key)
+    print("DEBUG has RaceAnchorFull:", "RaceAnchorFull" in uf.columns)
+    print("DEBUG columns:", list(uf.columns))
+
     uf = uf.groupby(race_key, group_keys=False).apply(_process_group)
 
     # --- DEBUG PRINT (single runner) ---
@@ -4045,3 +4049,4 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
