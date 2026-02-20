@@ -13,40 +13,35 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 1) Try to pull yesterday's merged_file.csv from the previous workflow run
+      # Try to download yesterday's merged_file from artifact
       - name: Download previous merged_file.csv (artifact)
-        id: dl_artifact
         uses: actions/download-artifact@v4
         with:
           name: merged-file
           path: .
         continue-on-error: true
 
-      # 2) If artifact was not found, seed from a GitHub Release asset (ONE-TIME)
-      - name: Seed merged_file.csv from Release asset (if missing)
-        if: always()
+      # If artifact does not exist (first run), seed from Release
+      - name: Seed merged_file.csv from Release (if missing)
         env:
           RELEASE_MERGED_URL: "https://github.com/harnessapp/harness-csv-data/releases/download/seed-merged/merged_file.csv"
         run: |
           if [ -f "merged_file.csv" ]; then
-            echo "✅ merged_file.csv already present (artifact download worked)."
+            echo "✅ merged_file.csv already present."
             ls -lah merged_file.csv
             exit 0
           fi
 
-          echo "⚠️ merged_file.csv not present. Seeding from Release..."
-          if [ "$RELEASE_MERGED_URL" = "https://github.com/harnessapp/harness-csv-data/releases/download/seed-merged/merged_file.csv" ]; then
-            echo "❌ You must paste RELEASE_MERGED_URL in the workflow."
-            exit 1
-          fi
+          echo "⚠️ merged_file.csv not found. Downloading seed from release..."
 
-          curl -L "$RELEASE_MERGED_URL" -o merged_file.csv
-          echo "✅ Seed downloaded."
+          curl -L \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/octet-stream" \
+            "$RELEASE_MERGED_URL" \
+            -o merged_file.csv
+
+          echo "✅ Seed downloaded:"
           ls -lah merged_file.csv
-
-      - name: Debug — confirm merged_file.csv present
-        run: |
-          ls -lah merged_file.csv || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -62,11 +57,10 @@ jobs:
       - name: Run scrapers
         env:
           BACKUPS_ENABLED: "0"
-          BACKUP_ROOT: "./_backups"
         run: |
           python -u scrapers/run_scrapers.py
 
-      # 3) Save merged_file.csv for the NEXT run
+      # Save merged_file.csv for tomorrow's run
       - name: Upload merged_file.csv (artifact for next run)
         if: always()
         uses: actions/upload-artifact@v4
