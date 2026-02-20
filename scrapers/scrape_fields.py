@@ -107,7 +107,7 @@ def generate_next_target_dates():
     # Generate the next 7 days' target dates (in the format DDMMYY)
     current_date = datetime.today()
     target_dates = []
-    for i in range(7):
+    for i in range(1):
         target_day = current_date + timedelta(days=i)
         target_dates.append(target_day.strftime("%d%m%y"))
     return target_dates
@@ -4029,7 +4029,16 @@ if __name__ == "__main__":
         debug_horse="Ideal Bronski",
     )
 
+    try:
+        import pandas as pd
+        _hdr = pd.read_csv("upcoming_fields.csv", nrows=0).columns.tolist()
+        print("DEBUG snapshot call: has Fair Odds?", "Fair Odds" in _hdr)
+        print("DEBUG snapshot call: has RaceAnchorFull?", "RaceAnchorFull" in _hdr)
+        print("DEBUG snapshot call: has Race Anchor?", "Race Anchor" in _hdr)
+    except Exception as e:
+        print("DEBUG snapshot call: failed to read header:", e)
 
+    
     # ✅ NEW: lock in what you published before the meeting disappears from upcoming_fields.csv
     snapshot_published_markets(
         uf_csv="upcoming_fields.csv",
@@ -4060,5 +4069,6 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
