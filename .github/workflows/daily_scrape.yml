@@ -11,20 +11,45 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Try to download yesterday's merged_file from artifact
-      - name: Download previous merged_file.csv (artifact)
-        uses: actions/download-artifact@v4
-        with:
-          name: merged-file
-          path: .
-        continue-on-error: true
+      # ✅ Restore merged_file.csv from the PREVIOUS successful workflow run (artifact if exists)
+      # NOTE: actions/download-artifact only works for artifacts created earlier in the SAME run,
+      # so we use gh to fetch from the last successful run.
+      - name: Restore merged_file.csv from previous successful run (artifact if exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          echo "🔎 Looking for previous successful run of this workflow..."
 
-      # If artifact does not exist (first run), seed from Release
+          PREV_RUN_ID=$(gh run list \
+            --workflow "${{ github.workflow }}" \
+            --branch main \
+            --limit 20 \
+            --json databaseId,conclusion \
+            --jq '.[] | select(.conclusion=="success") | .databaseId' | head -n 1)
+
+          if [ -z "$PREV_RUN_ID" ]; then
+            echo "ℹ️ No previous successful run found."
+            exit 0
+          fi
+
+          echo "⬇️ Attempting to download artifact 'merged-file' from run $PREV_RUN_ID"
+          gh run download "$PREV_RUN_ID" -n merged-file -D . || true
+
+          if [ -f "merged_file.csv" ] && [ -s "merged_file.csv" ]; then
+            echo "✅ Restored merged_file.csv from previous run artifact."
+            ls -lah merged_file.csv
+          else
+            echo "ℹ️ Previous run artifact not found (or empty). Will fall back to Release seed."
+          fi
+
+      # ✅ If merged_file.csv still missing, seed from Release
       - name: Seed merged_file.csv from Release (if missing)
         env:
           RELEASE_MERGED_URL: "https://github.com/harnessapp/harness-csv-data/releases/download/seed-merged/merged_file.csv"
@@ -45,7 +70,6 @@ jobs:
             "$RELEASE_MERGED_URL" \
             -o merged_file.csv
 
-          # Validate download
           if [ ! -f "merged_file.csv" ] || [ ! -s "merged_file.csv" ]; then
             echo "❌ Seed download failed or file is empty."
             exit 1
@@ -53,7 +77,6 @@ jobs:
 
           echo "✅ Seed downloaded successfully:"
           ls -lah merged_file.csv
-
           echo "Row count:"
           wc -l merged_file.csv
 
@@ -81,7 +104,7 @@ jobs:
           set -e
           python -u scrapers/scrape_fields.py
 
-      # Save merged_file.csv for tomorrow's run
+      # Save merged_file.csv for next run
       - name: Upload merged_file.csv (artifact for next run)
         if: always()
         uses: actions/upload-artifact@v4
