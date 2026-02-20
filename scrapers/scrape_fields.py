@@ -2072,7 +2072,8 @@ def add_rating():
       - ModelRating (same as Rating, but kept as a stable "preferred" column)
     """
     try:
-        uf = pd.read_csv("upcoming_fields.csv")
+        import pandas as _pd  # avoids any accidental local 'pd' shadowing
+        uf = _pd.read_csv("upcoming_fields.csv")
     except Exception as e:
         print(f"⚠️ Failed to read upcoming_fields.csv: {e}")
         return
@@ -2382,7 +2383,8 @@ def add_market_from_merged_model(
 
 
     try:
-        uf = pd.read_csv("upcoming_fields.csv")
+        import pandas as _pd  # avoids any accidental local 'pd' shadowing
+        uf = _pd.read_csv("upcoming_fields.csv")
     except Exception as e:
         print(f"⚠️ Failed to read upcoming_fields.csv: {e}")
         return
@@ -4076,6 +4078,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
