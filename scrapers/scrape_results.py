@@ -31,7 +31,9 @@ IGNORE_WIDTHS = {"TO"}      # rows with Width in this set are excluded from Step
 print(f"🔧 REBUILD_ONLY={REBUILD_ONLY}")
 
 
-BACKUP_ROOT = r"C:\Users\joel\OneDrive\Trotify"  # <-- your requested folder
+BACKUP_ROOT = os.environ.get("BACKUP_ROOT", "backups")  # GitHub-safe default
+BACKUPS_ENABLED = os.environ.get("BACKUPS_ENABLED", "1").strip() in ("1", "true", "True", "yes", "YES")
+
 
 def backup_file(
     path: str,
@@ -44,9 +46,13 @@ def backup_file(
 
     Also prunes to keep only the most recent `keep_last` daily backups.
     """
-    if not os.path.exists(path):
+
+    if not BACKUPS_ENABLED:
         return None
 
+    if not os.path.exists(path):
+        return None
+        
     backups_dir = os.path.join(backups_root, "backups")
     os.makedirs(backups_dir, exist_ok=True)
 
@@ -2462,3 +2468,4 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
