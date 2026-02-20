@@ -2,6 +2,16 @@ name: Daily Scrape
 
 on:
   workflow_dispatch:
+    inputs:
+      script:
+        description: "Which scraper to run (manual tests). Scheduled runs always use scrape_fields.py for now."
+        required: true
+        default: "scrape_fields.py"
+        type: choice
+        options:
+          - scrape_fields.py
+          - scrape_results.py
+          - run_scrapers.py
   schedule:
     - cron: "30 13 * * *" # 12:30am Sydney during AEDT (UTC+11)
 
@@ -97,14 +107,24 @@ jobs:
           fi
           pip install pandas requests beautifulsoup4 lxml numpy
 
-      - name: Run scrape_fields.py only (debug)
+      # ✅ Manual runs: use the selected script input
+      # ✅ Scheduled runs: keep running scrape_fields.py until you’re ready to switch to run_scrapers.py
+      - name: Run selected scraper (manual) / scrape_fields.py (scheduled)
         env:
           BACKUPS_ENABLED: "0"
         run: |
           set -e
-          python -u scrapers/scrape_fields.py
 
-      # Save merged_file.csv for next run
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            SCRIPT="scrape_fields.py"
+          else
+            SCRIPT="${{ inputs.script }}"
+          fi
+
+          echo "✅ Running: scrapers/${SCRIPT}"
+          python -u "scrapers/${SCRIPT}"
+
+      # Save merged_file.csv for next run (only if it exists)
       - name: Upload merged_file.csv (artifact for next run)
         if: always()
         uses: actions/upload-artifact@v4
