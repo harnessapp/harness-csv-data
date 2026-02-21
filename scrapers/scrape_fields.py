@@ -103,9 +103,16 @@ def backup_upcoming_fields_daily(
 
 
 
+from datetime import datetime, timedelta
+import pytz
+
 def generate_next_target_dates():
-    # Generate the next 7 days' target dates (in the format DDMMYY)
-    current_date = datetime.today()
+    # Define Sydney time zone
+    sydney_tz = pytz.timezone('Australia/Sydney')
+    
+    # Get the current date in Sydney timezone
+    current_date = datetime.now(sydney_tz).date()  # Get today's date in Sydney
+    
     target_dates = []
     for i in range(7):
         target_day = current_date + timedelta(days=i)
@@ -4100,6 +4107,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
