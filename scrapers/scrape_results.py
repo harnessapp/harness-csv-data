@@ -1844,24 +1844,20 @@ def scrape_meeting_results(venue_code, date_str):
     venue_url = f"https://www.harness.org.au/racing/fields/race-fields/?mc={venue_code}{date_str}"
     print(f"🔧 Scraping URL: {venue_url}")  # Log the URL being requested
 
-
-    # Add User-Agent header
+    # Add User-Agent header to mimic a browser
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
     }
     
     try:
-        response = requests.get(venue_url, timeout=15)
+        response = requests.get(venue_url, headers=headers, timeout=15)
 
         # Log the response status code and page length
         print(f"🔧 Response status code: {response.status_code}")
         print(f"🔧 Page content length: {len(response.text)}")  # Log the length of the page content
 
-        # -----------------------------
-        # Rate limit / access denied
-        # -----------------------------
+        # Check if the page was blocked or rate-limited
         if response.status_code in (429, 403):
-            # If the server tells us how long to wait, honour it.
             retry_after = response.headers.get("Retry-After")
             wait_s = 60  # sensible default
             if retry_after and str(retry_after).strip().isdigit():
@@ -1869,26 +1865,24 @@ def scrape_meeting_results(venue_code, date_str):
 
             print(f"🚫 {venue_code}{date_str} — RATE LIMITED (HTTP {response.status_code}). Stopping for {wait_s}s.")
             time.sleep(wait_s)
-            # Returning None lets the caller distinguish "blocked" from "nil"
             return None
 
+        # Check for other errors (non-200 status code)
         if response.status_code != 200:
             print(f"⚠️ {venue_code}{date_str} — HTTP {response.status_code}")
             return []
 
-        html = response.text
+        # Save raw HTML for further inspection
+        with open(f"raw_page_{venue_code}{date_str}.html", "w", encoding="utf-8") as f:
+            f.write(response.text)
 
-        # Extra safety: sometimes the page is 200 but contains access denied text
-        if "rate limit exceeded" in html.lower() or "access denied" in html.lower():
-            print(f"🚫 {venue_code}{date_str} — RATE LIMITED (body). Stopping for 60s.")
-            time.sleep(60)
-            return None
+        # Parse HTML with BeautifulSoup
+        soup = BeautifulSoup(response.text, "html.parser")
 
-        soup = BeautifulSoup(html, "html.parser")
-
+        # Check for the existence of the <h2> tag (venue header)
         h2_tag = soup.find("h2")
         if not h2_tag:
-            # no meeting (or unexpected html)
+            print(f"⚠️ No <h2> tag found for {venue_code}{date_str}. This may indicate an unexpected page structure.")
             return []
 
         h2_text = h2_tag.get_text(strip=True)
@@ -1897,8 +1891,12 @@ def scrape_meeting_results(venue_code, date_str):
         if "(" in h2_text and ")" in h2_text:
             meeting_time = h2_text.split("(")[1].split(")")[0]
 
+        print(f"🔧 Found venue: {venue} - Time: {meeting_time}")
+
+        # Parse race results
         results = parse_race_results(soup, venue, date_str, venue_code, meeting_time)
 
+        # If results were found, log the number of races and runners
         if results:
             print(
                 f"✅ {venue_code}{date_str} — {venue} "
@@ -1906,10 +1904,9 @@ def scrape_meeting_results(venue_code, date_str):
                 f"runners={len(results)}"
             )
 
-        # Real meeting hit: be polite
+        # Be polite by pausing before the next request
         time.sleep(random.uniform(3.5, 6.0))
         return results
-
 
     except Exception as e:
         print(f"❌ Failed {venue_code}{date_str}: {e}")
@@ -2483,6 +2480,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
