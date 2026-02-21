@@ -36,8 +36,6 @@ jobs:
         uses: actions/checkout@v4
 
       # ✅ Restore merged_file.csv from the PREVIOUS successful workflow run (artifact if exists)
-      # NOTE: actions/download-artifact only works for artifacts created earlier in the SAME run,
-      # so we use gh to fetch from the last successful run.
       - name: Restore merged_file.csv from previous successful run (artifact if exists)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -113,7 +111,7 @@ jobs:
           else
             echo "ℹ️ No requirements.txt found; installing core deps only"
           fi
-          pip install pandas requests beautifulsoup4 lxml numpy
+          pip install pandas requests beautifulsoup4 lxml numpy pytz  # Added pytz here
 
       # ✅ Manual runs: use the selected script input
       # ✅ Scheduled runs: keep running scrape_fields.py until you’re ready to switch to run_scrapers.py
