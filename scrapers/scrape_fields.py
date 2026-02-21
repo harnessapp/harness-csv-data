@@ -107,7 +107,7 @@ def generate_next_target_dates():
     # Generate the next 7 days' target dates (in the format DDMMYY)
     current_date = datetime.today()
     target_dates = []
-    for i in range(7):
+    for i in range(1):
         target_day = current_date + timedelta(days=i)
         target_dates.append(target_day.strftime("%d%m%y"))
     return target_dates
@@ -4100,6 +4100,7 @@ if __name__ == "__main__":
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
