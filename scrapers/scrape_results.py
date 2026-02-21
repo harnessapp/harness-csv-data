@@ -1844,6 +1844,12 @@ def scrape_meeting_results(venue_code, date_str):
     venue_url = f"https://www.harness.org.au/racing/fields/race-fields/?mc={venue_code}{date_str}"
     print(f"🔧 Scraping URL: {venue_url}")  # Log the URL being requested
 
+
+    # Add User-Agent header
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+    }
+    
     try:
         response = requests.get(venue_url, timeout=15)
 
@@ -2477,6 +2483,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
