@@ -1842,9 +1842,14 @@ venue_code_map = {
 
 def scrape_meeting_results(venue_code, date_str):
     venue_url = f"https://www.harness.org.au/racing/fields/race-fields/?mc={venue_code}{date_str}"
+    print(f"🔧 Scraping URL: {venue_url}")  # Log the URL being requested
 
     try:
         response = requests.get(venue_url, timeout=15)
+
+        # Log the response status code and page length
+        print(f"🔧 Response status code: {response.status_code}")
+        print(f"🔧 Page content length: {len(response.text)}")  # Log the length of the page content
 
         # -----------------------------
         # Rate limit / access denied
@@ -2472,5 +2477,6 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
