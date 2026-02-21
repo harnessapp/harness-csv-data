@@ -12,6 +12,14 @@ on:
           - scrape_fields.py
           - scrape_results.py
           - run_scrapers.py
+          - cold_drivers.py
+          - colddrivers30.py
+          - coldtrainers.py
+          - coldtrainers30.py
+          - hot_drivers.py
+          - hot_trainers.py
+          - hotdrivers30.py
+          - hottrainers30.py
   schedule:
     - cron: "30 13 * * *" # 12:30am Sydney during AEDT (UTC+11)
 
