@@ -2294,6 +2294,10 @@ discovered_meetings = set()  # optional: track meetings we hit (not strictly req
 
 for delta in range(DISCOVERY_DAYS):
     scrape_date = start_date - timedelta(days=delta)
+
+    # Add this line to log the dates being scraped
+    print(f"🔧 Scraping for date: {scrape_date.strftime('%d/%m/%Y')}")  # Log the exact date being scraped
+
     date_str = scrape_date.strftime("%d%m%y")
 
     for venue_name, venue_code in venue_code_map.items():
@@ -2468,4 +2472,5 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
