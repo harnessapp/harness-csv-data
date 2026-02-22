@@ -591,7 +591,7 @@ def _ensure_half_time(df: pd.DataFrame) -> pd.DataFrame:
         # Debugging: Print the first few mapped values
         print(f"Mapped values for Half Distance: {mapped.head()}")
 
-        # Convert mapped values to string to ensure compatibility with "Half Distance"
+        # Ensure 'mapped' is a valid string or NaN (convert numeric to strings or NaN)
         mapped = mapped.apply(lambda x: str(x) if pd.notna(x) else np.nan)  # Convert non-NaN values to strings, leave NaN as is
 
         # Assign cleaned mapped values to "Half Distance"
@@ -2420,6 +2420,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
