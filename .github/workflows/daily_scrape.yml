@@ -32,15 +32,14 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - name: Install GitHub CLI (for gh run)
-        run: |
-          curl -fsSL https://cli.github.com/packages/githubcli-archive.key | sudo tee /etc/apt/trusted.gpg.d/github.asc >/dev/null
-          sudo apt-add-repository https://cli.github.com/packages
-          sudo apt-get update
-          sudo apt-get install gh
-
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      # ✅ Install GitHub CLI (reliable installation method)
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install gh
 
       # ✅ Restore merged_file.csv from the PREVIOUS successful workflow run (artifact if exists)
       - name: Restore merged_file.csv from previous successful run (artifact if exists)
@@ -49,7 +48,7 @@ jobs:
         run: |
           set +e
           echo "🔎 Looking for previous successful run of this workflow..."
-
+          
           PREV_RUN_ID=$(gh run list \
             --workflow "${{ github.workflow }}" \
             --branch main \
