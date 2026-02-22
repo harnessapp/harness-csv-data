@@ -96,6 +96,23 @@ jobs:
           echo "Row count:"
           wc -l merged_file.csv
 
+      # ✅ Debug: Check first few rows of merged_file.csv to ensure it's the expected version
+      - name: Check first few rows of merged_file.csv
+        run: |
+          echo "First few rows of merged_file.csv:"
+          head -n 10 merged_file.csv  # This will print the first 10 rows of the file
+
+      # ✅ Debug: Check columns in merged_file.csv to ensure consistency
+      - name: Check columns in merged_file.csv
+        run: |
+          echo "Columns in merged_file.csv:"
+          python -c "import pandas as pd; df = pd.read_csv('merged_file.csv'); print(df.columns)"
+
+      # ✅ Debug: Check for missing data in key columns
+      - name: Check for missing data in key columns
+        run: |
+          python -c "import pandas as pd; df = pd.read_csv('merged_file.csv'); print(df[['LeadTime', '1st Quarter', '2nd Quarter', 'Distance', 'Half Distance', 'BellPosition']].isna().sum())"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
