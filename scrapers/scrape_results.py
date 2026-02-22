@@ -1850,7 +1850,8 @@ def scrape_meeting_results(venue_code, date_str):
     }
     
     try:
-        response = requests.get(venue_url, headers=headers, timeout=15)
+        time.sleep(random.uniform(1, 2))  # Random delay before each request (1–2 seconds)
+        response = requests.get(venue_url, headers=headers, timeout=30)
 
         # Log the response status code and page length
         print(f"🔧 Response status code: {response.status_code}")
@@ -2480,6 +2481,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
