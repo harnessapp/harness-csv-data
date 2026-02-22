@@ -113,6 +113,10 @@ jobs:
           fi
           pip install pandas requests beautifulsoup4 lxml numpy pytz  # Added pytz here
 
+      - name: Install Selenium
+        run: |
+          pip install selenium
+
       # ✅ Manual runs: use the selected script input
       # ✅ Scheduled runs: keep running scrape_fields.py until you’re ready to switch to run_scrapers.py
       - name: Run selected scraper (manual) / scrape_fields.py (scheduled)
