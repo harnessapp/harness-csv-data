@@ -556,6 +556,9 @@ def _ensure_half_time(df: pd.DataFrame) -> pd.DataFrame:
     """
     Ensures 'Half Time' exists and is backfilled.
 
+    # Debugging: Check the columns in the DataFrame before doing any work
+    print("Columns in the DataFrame:", df.columns)
+
     Definition (horse-specific 'to the 800m' mile rate, rounded to nearest full second):
       Half Time = (LeadTime + 1st Quarter + 2nd Quarter) / (Distance - Half Distance - 800) * 1609
 
@@ -1755,104 +1758,8 @@ if REBUILD_ONLY:
 
 # --- VENUE CODE MAP ---
 venue_code_map = {
-    "Armidale": "AE",
-    "Albury": "AL",
     "Albion Park": "AP",
-    "Ararat": "AR",
-    "Gawler": "AW",
-    "Albany": "AY",
-    "Ballarat": "BA",
-    "Blayney": "BB",
-    "Burnie": "BE",
-    "Bridgetown": "BG",
-    "Bathurst": "BH",
-    "Bankstown": "BK",
-    "Bendigo": "BN",
-    "Broken Hill": "BR",
-    "Boort": "BT",
-    "Busselton": "BU",
-    "Bunbury": "BY",
-    "Cowra": "CA",
-    "Canberra": "CB",
-    "Charlton": "CH",
-    "Carrick": "CK",
-    "Coolamon": "CL",
-    "Cobram": "CO",
-    "Cranbourne": "CR",
-    "Collie": "CX",
-    "Darling Downs at Warwick": "DJ",
-    "Dubbo": "DU",
-    "Devonport": "DV",
-    "South Australia": "DZ",
-    "Echuca": "EC",
-    "Hobart": "EH",
-    "Lockyer": "EQ",
-    "Eugowra": "EU",
-    "Wagga at Riverina Paceway": "EY",
-    "Forbes": "FB",
-    "Swan Hill": "FD",
-    "Globe Derby Park": "GD",
-    "Geelong": "GE",
-    "Gloucester Park": "GP",
-    "Griffith": "GR",
-    "Gunbower": "GU",
-    "Hamilton": "HM",
-    "Horsham": "HS",
-    "Kilcoy": "IJ",
-    "Birchip": "IR",
-    "Junee": "JU",
-    "Bendigo at Melton": "JY",
-    "Kilmore": "KI",
-    "Kapunda": "KP",
-    "Leeton": "LE",
-    "Orange at Bathurst": "LH",
-    "Goulburn": "LM",
-    "Launceston": "LN",
-    "Maitland": "MD",
-    "Tabcorp Pk Menangle": "ME",
-    "Mount Gambier": "MG",
-    "Maryborough": "MH",
-    "Mildura": "ML",
-    "Melton": "MX",
-    "Narrabri": "NA",
-    "Narrogin": "NG",
-    "Northam": "NM",
-    "Newcastle": "NR",
-    "Ouyen": "OU",
-    "Pinjarra": "PA",
-    "Nswhrc at Tabcorp Pk Menangle": "PC",
-    "Penrith": "PE",
-    "Parkes": "PK",
-    "Port Pirie": "PP",
-    "Mildura at Swan Hill": "QA",
-    "Wedderburn at Maryborough": "QP",
-    "Wangaratta at Shepparton": "QY",
-    "St Arnaud at Charlton": "QZ",
-    "Redcliffe": "RE",
-    "St Arnaud": "SA",
-    "Scottsdale": "SC",
-    "Shepparton": "SP",
-    "Strathalbyn at Globe Derby Park": "SQ",
-    "Strathalbyn": "ST",
-    "Stawell": "SW",
-    "Tamworth": "TA",
-    "Terang": "TE",
-    "Temora": "TM",
-    "Marburg": "UG",
-    "Kadina at Port Pirie": "UI",
-    "Mooroopna at Shepparton": "VC",
-    "Victor Harbor": "VH",
-    "Elmore at Bendigo": "VL",
-    "Kyabram at Shepparton": "VV",
-    "Wagin": "WA",
-    "Wedderburn": "WD",
-    "West Wyalong": "WE",
-    "Wangaratta": "WN",
-    "Warragul": "WR",
-    "Williams": "WS",
-    "Yarra Valley": "YG",
-    "Young": "YU",
-    "Central Wheatbelt": "ZO",
+
 }
 
 import time
@@ -2503,6 +2410,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
