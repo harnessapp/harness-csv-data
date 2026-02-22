@@ -591,14 +591,13 @@ def _ensure_half_time(df: pd.DataFrame) -> pd.DataFrame:
         # Debugging: Print the first few mapped values
         print(f"Mapped values for Half Distance: {mapped.head()}")
 
-        # Ensure 'mapped' is a valid string or NaN (convert numeric to strings or NaN)
-        mapped = mapped.apply(lambda x: str(x) if pd.notna(x) else np.nan)  # Convert non-NaN values to strings, leave NaN as is
+        # Convert non-NaN mapped values to strings and handle NaN correctly
+        mapped = mapped.apply(lambda x: str(x) if pd.notna(x) else np.nan)
 
         # Assign cleaned mapped values to "Half Distance"
         out.loc[hd_missing, "Half Distance"] = mapped
 
     out["Half Distance"] = pd.to_numeric(out["Half Distance"], errors="coerce")
-
 
     # Numeric inputs
     lt = pd.to_numeric(out["LeadTime"], errors="coerce")
@@ -844,8 +843,8 @@ def _ensure_ind_half_and_horse_delta(df: pd.DataFrame) -> pd.DataFrame:
         # Debugging: Print the first few mapped values
         print(f"Mapped values for Half Distance: {mapped.head()}")
 
-        # Ensure 'mapped' is a valid string or NaN (convert numeric to strings or NaN)
-        mapped = mapped.apply(lambda x: str(x) if pd.notna(x) else np.nan)  # Convert non-NaN values to strings, leave NaN as is
+        # Convert non-NaN mapped values to strings and handle NaN correctly
+        mapped = mapped.apply(lambda x: str(x) if pd.notna(x) else np.nan)
 
         # Assign cleaned mapped values to "Half Distance"
         out.loc[hd_missing, "Half Distance"] = mapped
@@ -2422,6 +2421,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
