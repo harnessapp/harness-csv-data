@@ -101,11 +101,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      # ✅ Install dependencies (including pandas, numpy, webdriver-manager, and selenium)
+      # ✅ Install dependencies (including pandas, numpy, webdriver-manager, selenium, and beautifulsoup4)
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install webdriver-manager selenium numpy pandas  # Reintroduce pandas and numpy
+          pip install webdriver-manager selenium numpy pandas beautifulsoup4  # Add beautifulsoup4 here
 
       # ✅ Manual runs: use the selected script input
       # ✅ Scheduled runs: keep running scrape_fields.py until you’re ready to switch to run_scrapers.py
