@@ -118,12 +118,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      # ✅ Install dependencies (including pandas, numpy, webdriver-manager, selenium, and beautifulsoup4)
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install webdriver-manager selenium numpy pandas beautifulsoup4  # Add beautifulsoup4 here
+       # ✅ Install dependencies (including pandas, numpy, webdriver-manager, selenium, and beautifulsoup4)
+       - name: Install deps
+         run: |
+           python -m pip install --upgrade pip
+           pip install pandas numpy selenium webdriver-manager beautifulsoup4  # Ensure pandas is installed here
 
+        # ✅ Debug: Check columns in merged_file.csv to ensure consistency
+        - name: Check columns in merged_file.csv
+          run: |
+            echo "Columns in merged_file.csv:"
+            python -c "import pandas as pd; df = pd.read_csv('merged_file.csv'); print(df.columns)"
+
+           
       # ✅ Manual runs: use the selected script input
       # ✅ Scheduled runs: keep running scrape_fields.py until you’re ready to switch to run_scrapers.py
       - name: Run selected scraper (manual) / scrape_fields.py (scheduled)
