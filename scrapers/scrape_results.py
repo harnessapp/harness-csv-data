@@ -838,16 +838,18 @@ def _ensure_ind_half_and_horse_delta(df: pd.DataFrame) -> pd.DataFrame:
     hd = pd.to_numeric(out["Half Distance"], errors="coerce")
     hd_missing = hd.isna()
 
-    # If there are missing values, map from BellPosition
     if hd_missing.any():
         mapped = out.loc[hd_missing, "BellPosition"].map(_HALF_DIST_MAPPING)
 
-        # Handle invalid mappings (e.g., if the value is not found in the map)
-        mapped = mapped.fillna(np.nan)  # Fill missing mappings with NaN (or a default value)
-    
+        # Debugging: Print the first few mapped values
+        print(f"Mapped values for Half Distance: {mapped.head()}")
+
+        # Ensure 'mapped' is a valid string or NaN (convert numeric to strings or NaN)
+        mapped = mapped.apply(lambda x: str(x) if pd.notna(x) else np.nan)  # Convert non-NaN values to strings, leave NaN as is
+
+        # Assign cleaned mapped values to "Half Distance"
         out.loc[hd_missing, "Half Distance"] = mapped
 
-    # Ensure that the "Half Distance" column is numeric, coercing any remaining non-numeric values to NaN
     out["Half Distance"] = pd.to_numeric(out["Half Distance"], errors="coerce")
 
     # Width: if blank, map from BellPosition
@@ -2420,6 +2422,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
