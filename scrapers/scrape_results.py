@@ -18,8 +18,8 @@ from bs4 import BeautifulSoup
 # CONFIG
 # ============================================================
 REBUILD_ONLY = False          # True = rebuild-only (no scraping)
-DAYS_BACK = 2               # when scraping: how many days back to check (from yesterday)
-DISCOVERY_DAYS = 2          # all venues (yesterday + day before)
+DAYS_BACK = 1               # when scraping: how many days back to check (from yesterday)
+DISCOVERY_DAYS = 1          # all venues (yesterday + day before)
 BACKFILL_EXTRA_DAYS = 0     # further back, but only meetings already in merged_file.csv
 
 OUTPUT_FILE = "extra_results.csv"
@@ -824,19 +824,34 @@ def _ensure_ind_half_and_horse_delta(df: pd.DataFrame) -> pd.DataFrame:
     # Half Distance: if blank/NaN, fill from BellPosition map
     hd = pd.to_numeric(out["Half Distance"], errors="coerce")
     hd_missing = hd.isna()
+
+    # If there are missing values, map from BellPosition
     if hd_missing.any():
         mapped = out.loc[hd_missing, "BellPosition"].map(_HALF_DIST_MAPPING)
+
+        # Handle invalid mappings (e.g., if the value is not found in the map)
+        mapped = mapped.fillna(np.nan)  # Fill missing mappings with NaN (or a default value)
+    
         out.loc[hd_missing, "Half Distance"] = mapped
 
+    # Ensure that the "Half Distance" column is numeric, coercing any remaining non-numeric values to NaN
     out["Half Distance"] = pd.to_numeric(out["Half Distance"], errors="coerce")
 
     # Width: if blank, map from BellPosition
     width_s = out["Width"].astype(str).str.strip().str.upper()
     width_missing = (width_s.eq("")) | (width_s.eq("NAN")) | (width_s.isna())
+
     if width_missing.any():
         mapped_w = out.loc[width_missing, "BellPosition"].map(_WIDTH_MAPPING)
+    
+        # Handle invalid mappings for Width (fill with NaN or a default value)
+        mapped_w = mapped_w.fillna("UNKNOWN")  # Use a default value like "UNKNOWN"
+    
         out.loc[width_missing, "Width"] = mapped_w
+
+    # Ensure that the "Width" column is correctly formatted as a string
     out["Width"] = out["Width"].astype(str).str.strip().str.upper()
+
 
     # MarginClean
     if "MarginClean" not in out.columns:
@@ -2488,6 +2503,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
