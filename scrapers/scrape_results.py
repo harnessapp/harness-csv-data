@@ -1888,7 +1888,7 @@ def scrape_meeting_results(venue_code, date_str):
         driver.get(venue_url)
 
         # Add a delay to ensure the page is fully loaded
-        time.sleep(random.uniform(3, 5))  # Adjust this time as needed for your page
+        time.sleep(random.uniform(1, 2))  # Adjust this time as needed for your page
 
         # Get page content
         html = driver.page_source
@@ -2503,6 +2503,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
