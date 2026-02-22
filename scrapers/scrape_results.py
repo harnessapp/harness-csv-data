@@ -581,11 +581,20 @@ def _ensure_half_time(df: pd.DataFrame) -> pd.DataFrame:
     # Normalise BellPosition
     out["BellPosition"] = out["BellPosition"].astype(str).str.strip().str.upper()
 
-    # Fill Half Distance from BellPosition where missing/blank
+    # Half Distance: if blank/NaN, fill from BellPosition map
     hd = pd.to_numeric(out["Half Distance"], errors="coerce")
     hd_missing = hd.isna()
+
     if hd_missing.any():
         mapped = out.loc[hd_missing, "BellPosition"].map(_HALF_DIST_MAPPING)
+
+        # Debugging: Print the first few mapped values
+        print(f"Mapped values for Half Distance: {mapped.head()}")
+
+        # Ensure 'mapped' is a valid string or NaN (convert invalid types to NaN)
+        mapped = mapped.apply(lambda x: x if isinstance(x, str) or pd.isna(x) else np.nan)
+
+        # Assign cleaned mapped values to "Half Distance"
         out.loc[hd_missing, "Half Distance"] = mapped
 
     out["Half Distance"] = pd.to_numeric(out["Half Distance"], errors="coerce")
@@ -2410,6 +2419,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
