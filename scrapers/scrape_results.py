@@ -1861,7 +1861,7 @@ def scrape_meeting_results(venue_code, date_str):
     options.headless = True  # Run Chrome in headless mode (without opening a browser window)
 
     # Set up the ChromeDriver service
-    service = Service(executable_path="C:\Users\joel\chromedriver.exe")  # Replace with the actual path to your chromedriver
+    service = Service(executable_path=r"C:\Users\joel\chromedriver.exe")
 
     # Create the WebDriver instance
     driver = webdriver.Chrome(service=service, options=options)
@@ -2486,6 +2486,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
