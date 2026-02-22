@@ -101,21 +101,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      # ✅ Install dependencies (only webdriver-manager and selenium)
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          if [ -f "scrapers/requirements.txt" ]; then
-            pip install -r scrapers/requirements.txt
-          elif [ -f "requirements.txt" ]; then
-            pip install -r requirements.txt  # Make sure this includes webdriver-manager
-          else
-            echo "ℹ️ No requirements.txt found; installing core deps only"
-          fi
-          pip install pandas requests beautifulsoup4 lxml numpy pytz webdriver-manager  # Ensure webdriver-manager is installed
-
-      - name: Install Selenium
-        run: |
-          pip install selenium
+          pip install webdriver-manager selenium  # Minimal dependencies
 
       # ✅ Manual runs: use the selected script input
       # ✅ Scheduled runs: keep running scrape_fields.py until you’re ready to switch to run_scrapers.py
