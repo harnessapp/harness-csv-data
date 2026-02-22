@@ -1846,11 +1846,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-import time
-import random
 
 def scrape_meeting_results(venue_code, date_str):
     venue_url = f"https://www.harness.org.au/racing/fields/race-fields/?mc={venue_code}{date_str}"
@@ -1858,65 +1856,46 @@ def scrape_meeting_results(venue_code, date_str):
 
     # Set up Chrome options
     options = Options()
-    options.headless = True  # Run Chrome in headless mode (without opening a browser window)
+    options.add_argument("--headless")  # Run Chrome in headless mode (without UI)
+    options.add_argument("--no-sandbox")  # Bypass the sandbox for running in CI/CD
+    options.add_argument("--disable-dev-shm-usage")  # Bypass dev-shm issues in CI/CD
 
-    # Set up the ChromeDriver service
-    service = Service(executable_path=r"C:\Users\joel\chromedriver.exe")
-
-    # Create the WebDriver instance
-    driver = webdriver.Chrome(service=service, options=options)
+    # Use WebDriver Manager to automatically download and set up chromedriver
+    service = Service(ChromeDriverManager().install())  # Automatically handle ChromeDriver
 
     try:
-        # Random delay before each request (1–2 seconds)
-        time.sleep(random.uniform(1, 2))
-        
-        # Open the URL in Selenium's WebDriver
+        # Initialize the WebDriver
+        driver = webdriver.Chrome(service=service, options=options)
+
+        # Open the webpage
         driver.get(venue_url)
 
-        # Wait for the page to load fully (you can adjust the wait time)
-        time.sleep(3)  # Adjust this based on the page load speed
+        # Wait for the page to load (optional)
+        time.sleep(5)  # Adjust this time as needed for your page
 
-        # Get the page source after Selenium loads the page
-        html = driver.page_source
+        # Check for the h2 tag
+        h2_tag = driver.find_element("tag name", "h2")
+        h2_text = h2_tag.text
+        print(f"🔧 Found h2 tag: {h2_text}")
 
-        # Check if the <h2> tag exists
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, "html.parser")
-        h2_tag = soup.find("h2")
-        if not h2_tag:
-            print(f"⚠️ No <h2> tag found for {venue_code}{date_str}. This may indicate an unexpected page structure.")
-            return []
-
-        h2_text = h2_tag.get_text(strip=True)
-        venue = h2_text.split("(")[0].strip()
-        meeting_time = "Unknown"
-        if "(" in h2_text and ")" in h2_text:
-            meeting_time = h2_text.split("(")[1].split(")")[0]
-
-        print(f"🔧 Found venue: {venue} - Time: {meeting_time}")
-
-        # Parse race results (you can use your existing parse_race_results function)
-        results = parse_race_results(soup, venue, date_str, venue_code, meeting_time)
+        # Extract race results or other information here
+        # You can use driver.page_source to get the full HTML after it has been rendered by Selenium
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        results = parse_race_results(soup, venue, date_str, venue_code)
 
         # If results were found, log the number of races and runners
         if results:
-            print(
-                f"✅ {venue_code}{date_str} — {venue} "
-                f"({meeting_time}) — races={len(set(r['Race No'] for r in results))}, "
-                f"runners={len(results)}"
-            )
+            print(f"✅ Found {len(set(r['Race No'] for r in results))} races and {len(results)} runners.")
+        
+        driver.quit()  # Close the WebDriver after scraping
 
-        # Be polite by pausing before the next request
-        time.sleep(random.uniform(3.5, 6.0))
         return results
 
     except Exception as e:
-        print(f"❌ Failed {venue_code}{date_str}: {e}")
+        print(f"❌ Failed to scrape {venue_code}{date_str}: {e}")
+        driver.quit()  # Ensure the driver is closed in case of an error
         return []
 
-    finally:
-        # Close the Selenium WebDriver instance
-        driver.quit()
 
 
 
@@ -2486,6 +2465,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
