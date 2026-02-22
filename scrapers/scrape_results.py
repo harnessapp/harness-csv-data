@@ -1845,47 +1845,43 @@ import random
 import requests
 from bs4 import BeautifulSoup
 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import time
+import random
+
 def scrape_meeting_results(venue_code, date_str):
     venue_url = f"https://www.harness.org.au/racing/fields/race-fields/?mc={venue_code}{date_str}"
     print(f"🔧 Scraping URL: {venue_url}")  # Log the URL being requested
 
-    # Add User-Agent header to mimic a browser
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-    }
-    
+    # Set up Chrome options
+    options = Options()
+    options.headless = True  # Run Chrome in headless mode (without opening a browser window)
+
+    # Set up the ChromeDriver service
+    service = Service(executable_path="path_to_your_chromedriver")  # Replace with the actual path to your chromedriver
+
+    # Create the WebDriver instance
+    driver = webdriver.Chrome(service=service, options=options)
+
     try:
         # Random delay before each request (1–2 seconds)
         time.sleep(random.uniform(1, 2))
+        
+        # Open the URL in Selenium's WebDriver
+        driver.get(venue_url)
 
-        # Perform the HTTP request
-        response = requests.get(venue_url, headers=headers, timeout=15)
+        # Wait for the page to load fully (you can adjust the wait time)
+        time.sleep(3)  # Adjust this based on the page load speed
 
-        # Check for rate-limiting
-        if response.status_code in (429, 403):
-            retry_after = response.headers.get("Retry-After")
-            wait_s = 60  # Default wait time if no Retry-After header
-            if retry_after and str(retry_after).strip().isdigit():
-                wait_s = int(retry_after)
-    
-            print(f"🚫 {venue_code}{date_str} — RATE LIMITED (HTTP {response.status_code}). Waiting for {wait_s}s.")
-            time.sleep(wait_s)
-            return None
+        # Get the page source after Selenium loads the page
+        html = driver.page_source
 
-        # Log the response status code and page length
-        print(f"🔧 Response status code: {response.status_code}")
-        print(f"🔧 Page content length: {len(response.text)}")  # Log the length of the page content
-
-        # Check if the page was blocked or rate-limited
-        if "rate limit exceeded" in response.text.lower() or "access denied" in response.text.lower():
-            print(f"🚫 {venue_code}{date_str} — RATE LIMITED (body). Stopping for 60s.")
-            time.sleep(60)
-            return None
-
-        # Parse the HTML with BeautifulSoup
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        # Check for the existence of the <h2> tag (venue header)
+        # Check if the <h2> tag exists
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
         h2_tag = soup.find("h2")
         if not h2_tag:
             print(f"⚠️ No <h2> tag found for {venue_code}{date_str}. This may indicate an unexpected page structure.")
@@ -1899,7 +1895,7 @@ def scrape_meeting_results(venue_code, date_str):
 
         print(f"🔧 Found venue: {venue} - Time: {meeting_time}")
 
-        # Parse race results
+        # Parse race results (you can use your existing parse_race_results function)
         results = parse_race_results(soup, venue, date_str, venue_code, meeting_time)
 
         # If results were found, log the number of races and runners
@@ -1911,12 +1907,16 @@ def scrape_meeting_results(venue_code, date_str):
             )
 
         # Be polite by pausing before the next request
-        time.sleep(random.uniform(3.5, 6.0))  # Adjusted for a polite delay between requests
+        time.sleep(random.uniform(3.5, 6.0))
         return results
 
     except Exception as e:
         print(f"❌ Failed {venue_code}{date_str}: {e}")
         return []
+
+    finally:
+        # Close the Selenium WebDriver instance
+        driver.quit()
 
 
 
@@ -2486,6 +2486,7 @@ else:
         backup_dir=r"C:\Users\joel\OneDrive\Trotify\backups",
         keep_last=7  # Keep the last 7 backups
     )
+
 
 
 
