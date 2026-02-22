@@ -41,6 +41,15 @@ jobs:
           sudo apt update
           sudo apt install gh
 
+      # ✅ Install Python and dependencies (pandas, numpy, selenium, webdriver-manager, beautifulsoup4)
+      - name: Set up Python and Install dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy selenium webdriver-manager beautifulsoup4  # Ensure pandas and numpy are installed here
+
       # ✅ Restore merged_file.csv from the PREVIOUS successful workflow run (artifact if exists)
       - name: Restore merged_file.csv from previous successful run (artifact if exists)
         env:
@@ -102,12 +111,6 @@ jobs:
           echo "Row count:"
           wc -l merged_file.csv
 
-      # ✅ Install dependencies (including pandas, numpy, webdriver-manager, selenium, and beautifulsoup4)
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas numpy selenium webdriver-manager beautifulsoup4  # Ensure pandas is installed here
-
       # ✅ Debug: Check first few rows of merged_file.csv to ensure it's the expected version
       - name: Check first few rows of merged_file.csv
         run: |
@@ -124,12 +127,6 @@ jobs:
       - name: Check for missing data in key columns
         run: |
           python -c "import pandas as pd; df = pd.read_csv('merged_file.csv'); print(df[['LeadTime', '1st Quarter', '2nd Quarter', 'Distance', 'Half Distance', 'BellPosition']].isna().sum())"
-
-      # ✅ Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
 
       # ✅ Run selected scraper (manual) / scrape_fields.py (scheduled)
       - name: Run selected scraper (manual) / scrape_fields.py (scheduled)
