@@ -20,8 +20,6 @@ on:
           - hot_trainers.py
           - hotdrivers30.py
           - hottrainers30.py
-  schedule:
-    - cron: "30 13 * * *" # 12:30am Sydney during AEDT (UTC+11)
 
 permissions:
   contents: write
